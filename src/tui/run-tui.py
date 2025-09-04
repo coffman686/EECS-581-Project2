@@ -4,14 +4,9 @@ from rich.layout import Layout
 from rich.panel import Panel
 from rich.live import Live
 
-# from game import gameState 
-class GameState:
-    total_mine_count : int = 10 
-    remaining_mine_count : int = total_mine_count
-    game_statuses = ["Game Loss" , "Playing" , "Victory"]
-    def __init__(self):
-        self.game_status = self.game_statuses[1]
+from src.main import GameState
 
+game = GameState()
 
 MIN_MAP_WIDTH = 80
 
