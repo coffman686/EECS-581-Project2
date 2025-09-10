@@ -1,51 +1,88 @@
-from rich import print
-from rich.console import Console
-from rich.layout import Layout
-from rich.panel import Panel
-from rich.live import Live
+from textual.app import App, ComposeResult
+from textual.containers import Grid, Horizontal
+from textual.widgets import Button, Label
 
-from src.main import GameState
+ROWS, COLS = 15, 15
 
-game = GameState()
+class Minesweeper(App):
+    CSS = f"""
+    Screen {{
+        align: center middle;
+    }}
 
-MIN_MAP_WIDTH = 80
+    #topbar {{
+        dock: top;
+        height: 3;
+        background: $boost;
+        content-align: center middle;
+    }}
 
-console = Console()
+    #bottombar {{
+        dock: bottom;
+        height: 3;
+        background: $boost;
+        content-align: center middle;
+    }}
 
-# build layout - this stuff is kinda weird - https://rich.readthedocs.io/en/stable/layout.html#fixed-size
+    #board {{
+        grid-size: {COLS+1} {ROWS+1};  /* +1 for headers */
+        grid-gutter: 0 0;
+    }}
 
-root = Layout()
-root.split_column(
-    Layout(name="upper"),       # map row
-    Layout(name="lower", size=3)  # status bars
-)
+    Button {{
+        width: 3;
+        height: 5;
+        content-align: center middle;
+        border: round;
+    }}
 
-root["upper"].split_row(
-    Layout(name="map"),
-    Layout(name="sidebar", ratio=1)
-)
+    Label {{
+        content-align: center middle;
+    }}
+    """
 
-root["lower"].split_row(
-        Layout(name="remaining_mines"),
-        Layout(name="game_status")
+    def compose(self) -> ComposeResult:
+        # Top status row
+        yield Horizontal(
+            Label("Remaining Mines: 99", id="mines"),
+            Label("Game Status: Running", id="status"),
+            id="topbar",
         )
 
-root["map"].minimum_size = MIN_MAP_WIDTH
-root["sidebar"].visible = False
+        # Main board grid
+        yield Grid(id="board")
 
-game = GameState()
+        # Bottom bar (optional)
+        yield Horizontal(
+            Label("Timer: 0s", id="timer"),
+            id="bottombar",
+        )
 
-def render():
-    width = console.size.width
-    if width < MIN_MAP_WIDTH:
-        root["map"].update(Panel(f"Terminal is too narrow"))
-    else:
-        map_str = "MAP"
-        root["map"].update(Panel(map_str, title=f"Map ({width} cols)"))
-        root["remaining_mines"].update(Panel(f"Remaining Mines: {game.remaining_mine_count}"))
-        root["game_status"].update(Panel(f"Game Status: {game.game_status}"))
+    def on_mount(self) -> None:
+        board = self.query_one("#board", Grid)
 
+        # Top-left empty corner
+        board.mount(Label(""))
 
-with Live(root, console=console, screen=True, refresh_per_second=10):
-    while True:
-        render()
+        alphabet = "abcdefghijklmnopqrstuvwxyz"
+        # Column headers
+        for c in range(COLS):
+            board.mount(Label(f"     {alphabet[c]}"))
+
+        # Rows + cells
+        for r in range(ROWS):
+            board.mount(Label(f"\n{r}"))
+            for c in range(COLS):
+                board.mount(Button("·", id=f"cell-{r}-{c}"))
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        rows, cols = map(int, event.button.id.split("-")[1:])
+        event.button.label = "X"
+
+        # Update status labels
+        self.query_one("#mines", Label).update(f"Remaining Mines: {ROWS*COLS - (rows*COLS+cols+1)}")
+        self.query_one("#status", Label).update("Game Status: Playing")
+
+if __name__ == "__main__":
+    Minesweeper().run()
+
