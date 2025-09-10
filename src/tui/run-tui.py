@@ -64,22 +64,23 @@ class Minesweeper(App):
         # Top-left empty corner
         board.mount(Label(""))
 
+        alphabet = "abcdefghijklmnopqrstuvwxyz"
         # Column headers
         for c in range(COLS):
-            board.mount(Label(str(c)))
+            board.mount(Label(f"     {alphabet[c]}"))
 
         # Rows + cells
         for r in range(ROWS):
-            board.mount(Label(str(r)))
+            board.mount(Label(f"\n{r}"))
             for c in range(COLS):
                 board.mount(Button("·", id=f"cell-{r}-{c}"))
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        r, c = map(int, event.button.id.split("-")[1:])
+        rows, cols = map(int, event.button.id.split("-")[1:])
         event.button.label = "X"
 
         # Update status labels
-        self.query_one("#mines", Label).update(f"Remaining Mines: {ROWS*COLS - (r*COLS+c+1)}")
+        self.query_one("#mines", Label).update(f"Remaining Mines: {ROWS*COLS - (rows*COLS+cols+1)}")
         self.query_one("#status", Label).update("Game Status: Playing")
 
 if __name__ == "__main__":
