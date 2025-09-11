@@ -1,29 +1,44 @@
+from enum import Enum
+
+# class syntax
+
+class CellState(Enum):
+
+    NONEADJACENT = 0
+
+    MINE = 1
+
+    HASADJACENT = 2
+
+    MINED = 3
+
 # very basic class, feel free to change anything
 class Cell:
     def __init__(self):
         # value >= 0 --> number of mines in a 9x9 are around the cell
         # value = -1 --> uninitialized
-        self.value = -1
-        self.hidden = True
-        self.mined = False
+        self.state : None | CellState = None
+        self.adjacent : int = -1
+        self.hidden : bool = True
+        self.flagged : bool = False
 
     def is_valid(self):
-        return True if self.value >= 0 else False
+        return True if self.adjacent >= 0 else False
     
     def has_mine(self):
-        return self.mined
+        return self.state == CellState.MINED
     
     def is_hidden(self):
         return self.hidden
     
     def get_value(self):
-        return self.value
+        return self.adjacent
     
     def __str__(self):
-        return "X" if self.hidden else "M" if self.mined else self.value
+        return "X" if self.hidden else "M" if self.state == CellState.MINED else str(self.adjacent)
     
     def __repr__(self):
-        return self.value
+        return str(self.adjacent)
 
 
 class GameState:
