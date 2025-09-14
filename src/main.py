@@ -1,4 +1,4 @@
-from classes import GameStatus, GameManager
+from .classes import GameStatus, GameManager
 
 def main():
     ### Initialize
