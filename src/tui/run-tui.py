@@ -1,5 +1,5 @@
 import curses
-from ..main import GameState, Cell, CellState
+from ..classes import GameManager, Cell, CellState
 
 ROWS, COLS = 10, 10
 CELL_W, CELL_H = 3, 1   # 3 chars per cell, 1 row high
@@ -11,7 +11,7 @@ def center_offsets(scr_h, scr_w, rows, cols, cw, ch):
     off_x = max((scr_w - board_w) // 2, 0)
     return off_y, off_x
 
-def draw_board(stdscr, grid, gameState, cursor=None):
+def draw_board(stdscr, grid, gameManager, cursor=None):
     stdscr.erase()
     sh, sw = stdscr.getmaxyx()
     off_y, off_x = center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
@@ -62,10 +62,10 @@ def draw_board(stdscr, grid, gameState, cursor=None):
 
     # Simple help bar
     stdscr.addstr(sh-1, 0,
-        f"Remaining Mines: {gameState.remaining_mine_count}"
+        f"Remaining Mines: {gameManager.remaining_mine_count}"
     )
     stdscr.addstr(sh-2, 0,
-        f"Game State: {gameState.game_status}"
+        f"Game State: {gameManager.game_status}"
     )
     stdscr.addstr(sh-3, 0,
         "Arrows=move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit  ",
@@ -89,16 +89,16 @@ def mouse_to_cell(stdscr, mx, my):
         return (r, c)
     return None
 
-def handle_left_click(gameState, r, c):
-    gameState.grid[r][c].hidden = False
-    return gameState
+def handle_left_click(gameManager, r, c):
+    gameManager.grid[r][c].hidden = False
+    return gameManager
 
-def handle_right_click(gameState, r, c):
-    if (gameState.grid[r][c].flagged == True):
-        gameState.grid[r][c].flagged =  False
+def handle_right_click(gameManager, r, c):
+    if (gameManager.grid[r][c].flagged == True):
+        gameManager.grid[r][c].flagged =  False
     else:
-        gameState.grid[r][c].flagged = True
-    return gameState
+        gameManager.grid[r][c].flagged = True
+    return gameManager
 
 
 def main(stdscr):
@@ -108,11 +108,11 @@ def main(stdscr):
     curses.mouseinterval(150)
 
     # build grid
-    gameState = GameState()
-    grid = gameState.grid
+    gameManager = GameManager(10)
+    grid = gameManager.grid
     cur_r, cur_c = 0, 0
 
-    draw_board(stdscr, grid,gameState, (cur_r, cur_c))
+    draw_board(stdscr, grid,gameManager, (cur_r, cur_c))
 
     while True:
         ch = stdscr.getch()
@@ -121,7 +121,7 @@ def main(stdscr):
             break
 
         if ch == curses.KEY_RESIZE:
-            draw_board(stdscr, grid, gameState,  (cur_r, cur_c))
+            draw_board(stdscr, grid, gameManager,  (cur_r, cur_c))
             continue
 
         if ch == curses.KEY_MOUSE:
@@ -138,13 +138,13 @@ def main(stdscr):
             # Left-click (terminals vary: check CLICKED/PRESSED)
             if bstate & curses.BUTTON1_CLICKED or bstate & curses.BUTTON1_PRESSED:
 
-                gameState = handle_left_click(gameState, r, c)
+                gameManager = handle_left_click(gameManager, r, c)
             # Right-click
             elif bstate & curses.BUTTON3_CLICKED or bstate & curses.BUTTON3_PRESSED:
 
-                gameState = handle_right_click(gameState, r, c)
+                gameManager = handle_right_click(gameManager, r, c)
 
-            draw_board(stdscr, grid, gameState, (cur_r, cur_c))
+            draw_board(stdscr, grid, gameManager, (cur_r, cur_c))
             continue
 
         # Keyboard navigation
@@ -152,10 +152,10 @@ def main(stdscr):
         elif ch in (curses.KEY_DOWN, ord('j')): cur_r = (cur_r + 1) % ROWS
         elif ch in (curses.KEY_LEFT, ord('h')): cur_c = (cur_c - 1) % COLS
         elif ch in (curses.KEY_RIGHT, ord('l')): cur_c = (cur_c + 1) % COLS
-        elif ch in (ord(' '), ord('\n')):     handle_left_click(gameState, cur_r, cur_c)
-        elif ch in (ord('f'), ord('F')):      handle_left_click(gameState, cur_r, cur_c)
+        elif ch in (ord(' '), ord('\n')):     handle_left_click(gameManager, cur_r, cur_c)
+        elif ch in (ord('f'), ord('F')):      handle_left_click(gameManager, cur_r, cur_c)
 
-        draw_board(stdscr, grid, gameState,(cur_r, cur_c))
+        draw_board(stdscr, grid, gameManager,(cur_r, cur_c))
 
 if __name__ == "__main__":
     curses.wrapper(main)
