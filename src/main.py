@@ -1,64 +1,29 @@
-from enum import Enum
+from .classes import GameStatus, GameManager
 
-# class syntax
+def main():
+    ### Initialize
+    # Get input, begin the game
+    total_mines = int(input("Enter the number of mines: ")) # TODO: Handle better
+    manager = GameManager(total_mines)
+    manager.game_status = GameStatus.STARTING
+    # ... do things to initialize?
+    manager.game_status = GameStatus.PLAYING
 
-class CellState(Enum):
-
-    NONEADJACENT = 0
-
-    MINE = 1
-
-    HASADJACENT = 2
-
-    MINED = 3
-
-# very basic class, feel free to change anything
-class Cell:
-    def __init__(self):
-        # value >= 0 --> number of mines in a 9x9 are around the cell
-        # value = -1 --> uninitialized
-        self.state : None | CellState = None
-        self.adjacent : int = -1
-        self.hidden : bool = True
-        self.flagged : bool = False
-
-    def is_valid(self):
-        return True if self.adjacent >= 0 else False
+    ### Main loop
+    # Get user input, process that input, output the new grid data
+    while manager.game_status == GameStatus.PLAYING:
+        # ... get input (where did the user click?)
+        # ... process (e.g. check if lost)
+        # ... output updates (ex: new grid)
+        break
     
-    def has_mine(self):
-        return self.state == CellState.MINED
-    
-    def is_hidden(self):
-        return self.hidden
-    
-    def get_value(self):
-        return self.adjacent
-    
-    def __str__(self):
-        return "X" if self.hidden else "M" if self.state == CellState.MINED else str(self.adjacent)
-    
-    def __repr__(self):
-        return str(self.adjacent)
+    ### End game
+    if manager.game_status == GameStatus.WIN:
+        pass
+    else:
+        pass
 
-
-class GameState:
-    game_statuses = ["Starting","Playing","Lose","Win"]
-    grid = [[Cell() for i in range(0, 10)] for j in range(0, 10)] # Create a 2D 10x10 array filled with Cell objects
-
-    total_mines = 10
-    def __init__(self):
-        self.remaining_mine_count = self.total_mines
-        self.game_status = self.game_statuses[0]
-        self.print_grid()
-    
-    def print_grid(self):
-        for row in self.grid:
-            out_row = ""
-            for column in row:
-                out_row += str(column)
-            print(out_row)
+    manager.game_status = GameStatus.END
 
 if __name__ == "__main__":
-    GameState()
-
-
+    main()
