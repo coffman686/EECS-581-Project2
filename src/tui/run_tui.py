@@ -4,6 +4,9 @@ from ..classes import GameManager, Cell, CellState
 ROWS, COLS = 10, 10
 CELL_W, CELL_H = 3, 1   # 3 chars per cell, 1 row high
 
+def run():
+    curses.wrapper(main)
+
 def center_offsets(scr_h, scr_w, rows, cols, cw, ch):
     board_w = cols * cw
     board_h = rows * ch

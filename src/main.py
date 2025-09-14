@@ -1,4 +1,4 @@
-from classes import GameStatus, GameManager, Cell, CellState
+from classes import GameStatus, GameManager
 
 def main():
     ### Initialize
@@ -15,13 +15,15 @@ def main():
         # ... get input (where did the user click?)
         # ... process (e.g. check if lost)
         # ... output updates (ex: new grid)
-        pass
+        break
     
     ### End game
     if manager.game_status == GameStatus.WIN:
         pass
     else:
         pass
+
+    manager.game_status = GameStatus.END
 
 if __name__ == "__main__":
     main()

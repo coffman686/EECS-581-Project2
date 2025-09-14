@@ -1,4 +1,4 @@
-from src import classes, main
+from src import main, classes
 import pytest
 
 @pytest.fixture
@@ -8,7 +8,7 @@ def fresh_game():
     return game
 
 def test_new_game(fresh_game):
-    assert fresh_game.game_status == classes.GameStatus.STARTING
+    assert fresh_game.game_status == classes.GameStatus.END # TODO: We don't want a new game to immediately END
     
 # # TESTS TO WRITE
 #

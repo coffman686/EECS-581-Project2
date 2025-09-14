@@ -11,6 +11,7 @@ class GameStatus(Enum):
     PLAYING = 1
     LOSE = 2
     WIN = 3
+    END = 4
 
 class Cell:
     def __init__(self):
