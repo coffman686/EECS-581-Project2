@@ -172,8 +172,3 @@ class GameManager:
                     # Only update if neighbor is inside grid bounds
                     if 0 <= temp_row < rows and 0 <= temp_col < cols:
                         self.grid[temp_row][temp_col].adjacent += 1
-
-
-
-
-            
