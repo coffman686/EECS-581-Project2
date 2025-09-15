@@ -94,6 +94,7 @@ class GameManager:
 
     def set_total_mines(self, total_mines):
         self.total_mines = total_mines
+        self.remaining_mine_count = total_mines
 
     def hide_cell(self, r, c):
         self.grid[r][c].hidden = False
