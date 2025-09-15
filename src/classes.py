@@ -1,4 +1,5 @@
 from enum import Enum
+import random
 
 class CellState(Enum):
     NONEADJACENT = 0
@@ -63,13 +64,33 @@ class Cell:
         return str(self.adjacent)
 
 class GameManager:
-    def __init__(self):
-        self.total_mines = 10 # Should be updated in the start screen
-        self.remaining_mine_count = self.total_mines
-        self.game_status = GameStatus.WELCOME
-        self.grid = [[Cell() for i in range(0, 10)] for j in range(0, 10)] # Create a 2D 10x10 array filled with Cell objects
+    def __init__(self, seed=None):
+        """Constructor function for the GamerManager Class"""
         self.screen = Screen()
         self.should_quit = False
+
+        # Save number of rows & cols
+        self.rows = 10
+        self.cols = 10
+
+        # Save number of mines & mines left
+        # Defaults to 10. We need to call set_total_mines to actually update it.
+        self.mine_count = 10
+        self.remaining_mine_count = 10
+
+        # Generate grid
+        self.grid = [[Cell() for i in range(self.cols)] for i in range(self.rows)]
+
+        # Set game state to 'Starting'
+        self.game_status = GameStatus.WELCOME
+        
+        # Generate Seed 
+        if seed is not None:
+            self.seed = seed
+        else:
+            self.seed = random.randrange(1 << 30)
+
+        self.generate_mines()
 
     def set_total_mines(self, total_mines):
         self.total_mines = total_mines
@@ -88,6 +109,7 @@ class GameManager:
 
     # Debug function to print our cell grid
     def print_grid(self):
+        """Prints the grid"""
         for row in self.grid:
             out_row = ""
             for column in row:
@@ -116,3 +138,42 @@ class GameManager:
                 self.screen.set_end()
             case _:
                 pass
+            
+    def generate_mines(self):
+        """Randomly places mines on the grid"""
+
+        rows = len(self.grid)
+        cols = len(self.grid[0])
+
+        # Use a seeded RNG if a seed was provided, otherwise use system randomness
+        seed_num = random.Random(self.seed)
+
+        # Select unique mine positions across the grid
+        mine_positions = seed_num.sample(range(rows * cols), self.mine_count)
+
+        for pos in mine_positions:
+            # Convert 1D position -> (row, col)
+            row = pos // cols
+            col = pos % cols
+
+            # Place a mine
+            self.grid[row][col].state = CellState.MINED
+
+            # Update all neighbors to increase their adjacent count
+            for adj_row in [-1, 0, 1]:
+                for adj_col in [-1, 0, 1]:
+                    # Skip the mine itself
+                    if adj_row == 0 and adj_col == 0:
+                        continue
+
+                    temp_row = row + adj_row
+                    temp_col = col + adj_col
+
+                    # Only update if neighbor is inside grid bounds
+                    if 0 <= temp_row < rows and 0 <= temp_col < cols:
+                        self.grid[temp_row][temp_col].adjacent += 1
+
+
+
+
+            
