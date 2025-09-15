@@ -253,6 +253,9 @@ class Front():
                 self.handle_left_click(r, c)
                 self.clicked_cells.append((r, c))  # add clicked cell
 
+                # testing this
+                self.game_manager.handle_clicked_cell(r, c)
+
             # Right-click
             elif bstate & curses.BUTTON3_CLICKED or bstate & curses.BUTTON3_PRESSED:
                 self.handle_right_click(r, c)
