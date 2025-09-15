@@ -108,6 +108,7 @@ class Front():
     
     def process_input(self, ch):
         if ch == ord('q'):
+            self.game_manager.should_quit = True
             return False
 
         if ch == curses.KEY_RESIZE:
@@ -127,11 +128,11 @@ class Front():
             self.cur_r, self.cur_c = r, c
             # Left-click (terminals vary: check CLICKED/PRESSED)
             if bstate & curses.BUTTON1_CLICKED or bstate & curses.BUTTON1_PRESSED:
-                game_manager = self.handle_left_click(r, c)
+                self.handle_left_click(r, c)
 
             # Right-click
             elif bstate & curses.BUTTON3_CLICKED or bstate & curses.BUTTON3_PRESSED:
-                game_manager = self.handle_right_click(r, c)
+                self.handle_right_click(r, c)
 
             self.draw_board()
             return True
@@ -144,26 +145,3 @@ class Front():
         elif ch in (ord(' '), ord('\n')):     self.handle_left_click(self.cur_r, self.cur_c)
         elif ch in (ord('f'), ord('F')):      self.handle_left_click(self.cur_r, self.cur_c)
         return True
-
-def main(stdscr):
-    curses.curs_set(0)
-    stdscr.keypad(True)
-    curses.mousemask(curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION)
-    curses.mouseinterval(150)
-
-    # build grid
-    game_manager = GameManager()
-    front = Front(stdscr, game_manager)
-    front.draw_board()
-
-    while True:
-        ch = front.get_input()
-        success = front.process_input(ch)
-        if not success:
-            break
-        else: 
-            front.draw_board()
-
-if __name__ == "__main__":
-    curses.wrapper(main)
-

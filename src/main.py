@@ -1,17 +1,28 @@
+import curses
 from src.classes import GameStatus, GameManager
+from src.tui.run_tui import Front
 
-def main():
+def setup_curses(stdscr):
+    curses.curs_set(0)
+    stdscr.keypad(True)
+    curses.mousemask(curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION)
+    curses.mouseinterval(150)
+
+def main(stdscr):
     ### Initialize
+    setup_curses(stdscr)
     manager = GameManager() 
-    manager.change_state(GameStatus.PLAYING)
+    frontend = Front(stdscr, manager)
+    frontend.draw_board()
 
     ### Main loop
     # Get user input, process that input, output the new grid data
-    while manager.should_quit != True:
-        # ... get input from frontend (where did the user click?)
-        # ... process in backend (e.g. check if lost)
-        # ... output updates to frontend (ex: new grid)
-        break
+    while True:
+        success = frontend.process_input(frontend.get_input())
+        if manager.should_quit or not success:
+            break
+        else:
+            frontend.draw_board()
 
 if __name__ == "__main__":
-    main()
+    curses.wrapper(main)

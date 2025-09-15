@@ -17,22 +17,22 @@ class GameStatus(Enum):
 # Think of this like the frontend manager. When the backend needs to change the state
 # of the frontend, it will call these methods.
 class Screen:
-    def set_welcome():
+    def set_welcome(self):
         pass
 
-    def set_start():
+    def set_start(self):
         pass
 
-    def set_playing():
+    def set_playing(self):
         pass
 
-    def set_lose():
+    def set_lose(self):
         pass
 
-    def set_win():
+    def set_win(self):
         pass
 
-    def set_end():
+    def set_end(self):
         pass
 
 class Cell:
