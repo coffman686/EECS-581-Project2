@@ -143,6 +143,7 @@ class Front():
         elif ch in (curses.KEY_RIGHT, ord('l')): self.cur_c = (self.cur_c + 1) % COLS
         elif ch in (ord(' '), ord('\n')):     self.handle_left_click(self.cur_r, self.cur_c)
         elif ch in (ord('f'), ord('F')):      self.handle_left_click(self.cur_r, self.cur_c)
+        return True
 
 def main(stdscr):
     curses.curs_set(0)
