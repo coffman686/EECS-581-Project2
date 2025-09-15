@@ -137,7 +137,7 @@ class Front():
         sh, sw = self.stdscr.getmaxyx()
 
         # Print clicked cells at the top
-        clicks_str = "Clicked: " + ", ".join([f"({self.alphabet[r - 1]},{c})" for r, c in self.clicked_cells])
+        clicks_str = "Clicked: " + ", ".join([f"({self.alphabet[r]},{c+1})" for r, c in self.clicked_cells])
         self.stdscr.addstr(0, 0, clicks_str[:sw-1])  # top row
 
         if not self.correct_terminal_size(sh, sw):
@@ -146,24 +146,24 @@ class Front():
 
         off_y, off_x = self.center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
 
+        # Draw column numbers
+        for c in range(COLS):
+            x = off_x + c * CELL_W
+            self.stdscr.addstr(off_y - 1, x + 1, f"{c+1}")
+
+        # Draw row letters
+        for r in range(ROWS):
+            y = off_y + r * CELL_H
+            self.stdscr.addstr(y, off_x - 2, f"{self.alphabet[r]}")
+
         for r in range(ROWS):
             for c in range(COLS):
-                y = off_y + r * CELL_H
-                x = off_x + c * CELL_W
-
-                # DRAWING BOARD EDGES
-                if (c == 0 and r == 0):
-                    self.stdscr.addstr(y,x," ")
-                    continue
-                elif (c == 0):
-                    self.stdscr.addstr(y,x, f"{self.alphabet[r-1]}")
-                    continue
-                elif (r == 0):
-                    self.stdscr.addstr(y,x,f"{c}")
-                    continue
-
                 # Get cell and render output depending on cell status
                 cell = self.game_manager.grid[r % ROWS][c % COLS]
+
+                # Calculate screen coordinates for this cell
+                y = off_y + r * CELL_H
+                x = off_x + c * CELL_W
 
                 if cell.flagged:
                     ch = "⚑"
