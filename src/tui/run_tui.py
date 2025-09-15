@@ -1,6 +1,6 @@
 import curses
 import platform
-from ..classes import GameManager, Cell, CellState
+from src.classes import GameManager, Cell, CellState, GameStatus
 
 ROWS, COLS = 10, 10
 CELL_W, CELL_H = 3, 1   # 3 chars per cell, 1 row high
@@ -11,6 +11,8 @@ class Front():
         self.game_manager = game_manager
         self.cur_r = 0
         self.cur_c = 0
+        self.clicked_cells = []
+        self.alphabet = "abcdefghijklmnopqrstuvwxyz"
 
     def center_offsets(self, scr_h, scr_w, rows, cols, cw, ch):
         board_w = cols * cw
@@ -130,8 +132,13 @@ class Front():
                     curses.noecho()
 
     def draw_board(self):
+        """Draw the game board on the screen"""
         self.stdscr.erase()
         sh, sw = self.stdscr.getmaxyx()
+
+        # Print clicked cells at the top
+        clicks_str = "Clicked: " + ", ".join([f"({self.alphabet[r]},{c+1})" for r, c in self.clicked_cells])
+        self.stdscr.addstr(0, 0, clicks_str[:sw-1])  # top row
 
         if not self.correct_terminal_size(sh, sw):
             self.display_size_warning()
@@ -139,35 +146,33 @@ class Front():
 
         off_y, off_x = self.center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
 
-        for r in range(ROWS+1):
-            alphabet = "abcdefghijklmnopqrstuvwxyz"
-            for c in range(COLS+1):
-                y = off_y + r * CELL_H
-                x = off_x + c * CELL_W
+        # Draw column numbers
+        for c in range(COLS):
+            x = off_x + c * CELL_W
+            self.stdscr.addstr(off_y - 1, x + 1, f"{c+1}")
 
-                # DRAWING BOARD EDGES
-                if (c == 0 and r == 0):
-                    self.stdscr.addstr(y,x," ")
-                    continue
-                elif (c == 0):
-                    self.stdscr.addstr(y,x, f"{alphabet[r-1]}")
-                    continue
-                elif (r == 0):
-                    self.stdscr.addstr(y,x,f"{c}")
-                    continue
+        # Draw row letters
+        for r in range(ROWS):
+            y = off_y + r * CELL_H
+            self.stdscr.addstr(y, off_x - 2, f"{self.alphabet[r]}")
 
+        for r in range(ROWS):
+            for c in range(COLS):
                 # Get cell and render output depending on cell status
                 cell = self.game_manager.grid[r % ROWS][c % COLS]
 
+                # Calculate screen coordinates for this cell
+                y = off_y + r * CELL_H
+                x = off_x + c * CELL_W
+
                 if cell.flagged:
                     ch = "⚑"
-
                 if cell.hidden and not cell.flagged:
                     ch = "H"
                 elif cell.state == CellState.MINED:
-                    ch = "0" 
+                    ch = "M" 
                 elif cell.state == CellState.HASADJACENT:
-                    ch = cell.adjacent
+                    ch = str(cell.adjacent)
                 elif cell.state == CellState.MINE:
                     ch = "X"
                 elif cell.state == CellState.NONEADJACENT:
@@ -197,6 +202,7 @@ class Front():
         self.stdscr.refresh()
 
     def mouse_to_cell(self, mx, my):
+        """Processes user clicks on cells"""
         sh, sw = self.stdscr.getmaxyx()
         off_y, off_x = self.center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
         # inside board?
@@ -245,6 +251,7 @@ class Front():
             # Left-click (terminals vary: check CLICKED/PRESSED)
             if bstate & curses.BUTTON1_CLICKED or bstate & curses.BUTTON1_PRESSED:
                 self.handle_left_click(r, c)
+                self.clicked_cells.append((r, c))  # add clicked cell
 
             # Right-click
             elif bstate & curses.BUTTON3_CLICKED or bstate & curses.BUTTON3_PRESSED:
