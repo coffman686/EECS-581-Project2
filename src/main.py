@@ -13,6 +13,13 @@ def main(stdscr):
     setup_curses(stdscr)
     manager = GameManager() 
     frontend = Front(stdscr, manager)
+
+    # Show start screen and get mine count
+    mine_count = frontend.init_start_screen()
+    if mine_count is None: 
+        return 
+    manager.set_total_mines(mine_count)
+    
     frontend.draw_board()
 
     ### Main loop
