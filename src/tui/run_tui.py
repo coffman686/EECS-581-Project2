@@ -40,7 +40,6 @@ def draw_start_screen(stdscr):
     while not correct_terminal_size(sh, sw):
         display_size_warning(stdscr)
         sh, sw = stdscr.getmaxyx()
-        correct_terminal_size(sh, sw)
 
     off_y, _ = center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
 
@@ -89,9 +88,8 @@ def init_start_screen(stdscr):
             # Check size
             sh, sw = stdscr.getmaxyx()
             while not correct_terminal_size(sh, sw, 1):
-                display_size_warning()
+                display_size_warning(stdscr)
                 sh, sw = stdscr.getmaxyx()
-                correct_terminal_size(sh, sw, 1)
             
             prompt = f"Enter number of mines (10-20), b=Back: " # -1 since first click can't be a mine
             prompt_left_padding = max((sw - len(prompt)) // 2, 0)
