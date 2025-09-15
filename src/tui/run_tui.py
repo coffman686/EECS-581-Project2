@@ -41,16 +41,10 @@ class Front():
         sh, sw = self.stdscr.getmaxyx()
         start_key = self.find_start_key()
 
-<<<<<<< HEAD
         while not self.correct_terminal_size(sh, sw):
             self.display_size_warning()
             sh, sw = self.stdscr.getmaxyx()
             self.correct_terminal_size(sh, sw)
-=======
-    while not correct_terminal_size(sh, sw):
-        display_size_warning(stdscr)
-        sh, sw = stdscr.getmaxyx()
->>>>>>> d31cba2 (Remove redundant check)
 
         off_y, _ = self.center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
 
@@ -83,7 +77,6 @@ class Front():
             if mode == "menu":
                 self.draw_start_screen()
 
-<<<<<<< HEAD
                 ch = self.stdscr.getch()
                 if ch in (ord('\n'), ord('\r')): 
                     return 10
@@ -92,39 +85,6 @@ class Front():
                 elif ch in (ord('q'), ord('Q')): 
                     return None
                 else: 
-=======
-            ch = stdscr.getch()
-            if ch in (ord('\n'), ord('\r')): 
-                return 10
-            elif ch in (ord('m'), ord('M')):
-                mode = "input"
-            elif ch in (ord('q'), ord('Q')): 
-                return None
-            else: 
-                continue
-
-        elif mode == "input":
-            stdscr.erase()
-
-            # Check size
-            sh, sw = stdscr.getmaxyx()
-            while not correct_terminal_size(sh, sw, 3):
-                display_size_warning(stdscr)
-                sh, sw = stdscr.getmaxyx()
-            
-            prompt = f"Enter number of mines (10-20), b=Back: " # -1 since first click can't be a mine
-            prompt_left_padding = max((sw - len(prompt)) // 2, 0)
-            stdscr.addstr(off_y + 2, prompt_left_padding, prompt)
-            stdscr.refresh()
-
-            curses.echo()
-            try: 
-                # Read up to 3 chars after prompt
-                s = stdscr.getstr(off_y + 2, prompt_left_padding + len(prompt), 3).decode()
-            
-                if s.lower() == 'b': 
-                    mode = "menu"
->>>>>>> d31cba2 (Remove redundant check)
                     continue
 
             elif mode == "input":
