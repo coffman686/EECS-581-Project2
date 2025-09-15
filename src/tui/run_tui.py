@@ -87,7 +87,7 @@ def init_start_screen(stdscr):
 
             # Check size
             sh, sw = stdscr.getmaxyx()
-            while not correct_terminal_size(sh, sw, 1):
+            while not correct_terminal_size(sh, sw, 3):
                 display_size_warning(stdscr)
                 sh, sw = stdscr.getmaxyx()
             
