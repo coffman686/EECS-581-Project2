@@ -76,7 +76,7 @@ class GameManager:
         # Save number of mines & mines left
         # Defaults to 10. We need to call set_total_mines to actually update it.
         self.total_mines = 10
-        self.remaining_mine_count = 10
+        self.remaining_mine_count = self.total_mines
 
         # Generate grid
         self.grid = [[Cell() for i in range(self.cols)] for i in range(self.rows)]
