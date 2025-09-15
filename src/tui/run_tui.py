@@ -69,7 +69,7 @@ class Frontend():
         off_y, _ = self.center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
 
         title = "MINESWEEPER"
-        prompt = f"Press {start_key} to start with {self.game_manager.total_mines} mines, or 'm' to set custom mines"
+        prompt = f"Press {start_key} to start with {self.game_manager.total_mines} mines"
         controls = "Arrows=move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit"
 
         # Calculate starting locations on x-axis (padding)
