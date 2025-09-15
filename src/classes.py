@@ -64,16 +64,15 @@ class Cell:
 
 class GameManager:
     def __init__(self):
-        self.total_mine = self.get_total_mines()
-        self.remaining_mine_count = self.total_mine
+        self.total_mines = 10 # Should be updated in the start screen
+        self.remaining_mine_count = self.total_mines
         self.game_status = GameStatus.WELCOME
         self.grid = [[Cell() for i in range(0, 10)] for j in range(0, 10)] # Create a 2D 10x10 array filled with Cell objects
         self.screen = Screen()
         self.should_quit = False
 
-    # Here is what we can call to get our mines. We'll just default to 10 for now.
-    def get_total_mines(self):
-        return 10 
+    def set_total_mines(self, total_mines):
+        self.total_mines = total_mines
 
     def hide_cell(self, r, c):
         self.grid[r][c].hidden = False
