@@ -12,6 +12,7 @@ class Front():
         self.cur_r = 0
         self.cur_c = 0
         self.clicked_cells = []
+        self.alphabet = "abcdefghijklmnopqrstuvwxyz"
 
     def center_offsets(self, scr_h, scr_w, rows, cols, cw, ch):
         board_w = cols * cw
@@ -136,7 +137,7 @@ class Front():
         sh, sw = self.stdscr.getmaxyx()
 
         # Print clicked cells at the top
-        clicks_str = "Clicked: " + ", ".join([f"({r},{c})" for r, c in self.clicked_cells])
+        clicks_str = "Clicked: " + ", ".join([f"({self.alphabet[r - 1]},{c})" for r, c in self.clicked_cells])
         self.stdscr.addstr(0, 0, clicks_str[:sw-1])  # top row
 
         if not self.correct_terminal_size(sh, sw):
@@ -145,9 +146,8 @@ class Front():
 
         off_y, off_x = self.center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
 
-        for r in range(ROWS+1):
-            alphabet = "abcdefghijklmnopqrstuvwxyz"
-            for c in range(COLS+1):
+        for r in range(ROWS):
+            for c in range(COLS):
                 y = off_y + r * CELL_H
                 x = off_x + c * CELL_W
 
@@ -156,7 +156,7 @@ class Front():
                     self.stdscr.addstr(y,x," ")
                     continue
                 elif (c == 0):
-                    self.stdscr.addstr(y,x, f"{alphabet[r-1]}")
+                    self.stdscr.addstr(y,x, f"{self.alphabet[r-1]}")
                     continue
                 elif (r == 0):
                     self.stdscr.addstr(y,x,f"{c}")
