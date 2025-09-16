@@ -174,7 +174,13 @@ class GameManager:
 
                     # Only update if neighbor is inside grid bounds
                     if 0 <= temp_row < rows and 0 <= temp_col < cols:
-                        self.grid[temp_row][temp_col].adjacent += 1
+                        # Also do not update adjacent count if the cell has a mine.
+                        if self.grid[temp_row][temp_col].has_mine() == False:
+                            # If cell state is -1, add 2 so it becomes 1, otherwise just add 1.
+                            if self.grid[temp_row][temp_col].adjacent == -1:
+                                self.grid[temp_row][temp_col].adjacent += 2
+                            else:
+                                self.grid[temp_row][temp_col].adjacent += 1
 
     def handle_clicked_cell(self, i, j):
         """
