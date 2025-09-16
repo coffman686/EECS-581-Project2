@@ -1,18 +1,36 @@
 import curses
+from curses.textpad import Textbox, rectangle
 import platform
 from src.classes import GameManager, Cell, CellState, GameStatus
 
 ROWS, COLS = 10, 10
 CELL_W, CELL_H = 3, 1   # 3 chars per cell, 1 row high
 
-class Front():
-    def __init__(self, stdscr, game_manager):
+class Frontend():
+    def __init__(self, stdscr):
         self.stdscr = stdscr
-        self.game_manager = game_manager
+        self.game_manager = GameManager()
         self.cur_r = 0
         self.cur_c = 0
         self.clicked_cells = []
         self.alphabet = "abcdefghijklmnopqrstuvwxyz"
+
+    def set_num_mines(self):
+        self.stdscr.addstr(0, 0, "Enter the number of mines for this game: (CTRL-G to send)")
+
+        editwin = curses.newwin(5,30, 2,1)
+        rectangle(self.stdscr, 1,0, 1+5+1, 1+30+1)
+        self.stdscr.refresh()
+
+        box = Textbox(editwin)
+
+        # Let the user edit until Ctrl-G is struck.
+        box.edit()
+
+        # Get resulting contents
+        num_mines = box.gather()
+        num_mines = int(num_mines.strip())
+        self.game_manager.set_total_mines(num_mines)
 
     def center_offsets(self, scr_h, scr_w, rows, cols, cw, ch):
         board_w = cols * cw
@@ -51,7 +69,7 @@ class Front():
         off_y, _ = self.center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
 
         title = "MINESWEEPER"
-        prompt = f"Press {start_key} to start with 10 mines, or 'm' to set custom mines"
+        prompt = f"Press {start_key} to start with {self.game_manager.total_mines} mines"
         controls = "Arrows=move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit"
 
         # Calculate starting locations on x-axis (padding)
@@ -65,71 +83,19 @@ class Front():
         self.stdscr.addstr(off_y + 4, controls_scr_x, controls)
         self.stdscr.refresh()
 
-    def init_start_screen(self):
+    def start_game(self):
         self.draw_start_screen()
-        self.stdscr.erase()
 
         sh, sw = self.stdscr.getmaxyx()
         off_y, _ = self.center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
 
         mode = "menu"
         while True: 
-            self.stdscr.erase()
-
-            if mode == "menu":
-                self.draw_start_screen()
-
-                ch = self.stdscr.getch()
-                if ch in (ord('\n'), ord('\r')): 
-                    return 10
-                elif ch in (ord('m'), ord('M')):
-                    mode = "input"
-                elif ch in (ord('q'), ord('Q')): 
-                    return None
-                else: 
-                    continue
-
-            elif mode == "input":
-                self.stdscr.erase()
-
-                # Check size
-                sh, sw = self.stdscr.getmaxyx()
-                while not self.correct_terminal_size(sh, sw, 1):
-                    self.display_size_warning()
-                    sh, sw = self.stdscr.getmaxyx()
-                    self.correct_terminal_size(sh, sw, 1)
-                
-                prompt = f"Enter number of mines (10-20), b=Back: " # -1 since first click can't be a mine
-                prompt_left_padding = max((sw - len(prompt)) // 2, 0)
-                self.stdscr.addstr(off_y + 2, prompt_left_padding, prompt)
-                self.stdscr.refresh()
-
-                curses.echo()
-                try: 
-                    # Read up to 3 chars after prompt
-                    s = self.stdscr.getstr(off_y + 2, prompt_left_padding + len(prompt), 3).decode()
-                
-                    if s.lower() == 'b': 
-                        mode = "menu"
-                        continue
-
-                    mines = int(s)
-                    if not (10 <= mines <= 20):
-                        raise ValueError("Out of range")
-                    
-                    return mines
-            
-                except Exception:
-                    curses.noecho()
-                    error_message = "Invalid input. Press any key..."
-                    error_left_padding = max((sw - len(error_message))//2, 0)
-                    
-                    self.stdscr.addstr(off_y + 4, error_left_padding, error_message)
-                    self.stdscr.refresh()
-                    self.stdscr.getch()
-                    continue
-                finally: 
-                    curses.noecho()
+            success = self.process_input(self.get_input())
+            if self.game_manager.should_quit or not success:
+                break
+            else:
+                self.draw_board()
 
     def draw_board(self):
         """Draw the game board on the screen"""
@@ -271,3 +237,4 @@ class Front():
         elif ch in (ord(' '), ord('\n')):     self.handle_left_click(self.cur_r, self.cur_c)
         elif ch in (ord('f'), ord('F')):      self.handle_left_click(self.cur_r, self.cur_c)
         return True
+

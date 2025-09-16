@@ -78,8 +78,8 @@ class GameManager:
 
         # Save number of mines & mines left
         # Defaults to 10. We need to call set_total_mines to actually update it.
-        self.mine_count = 10
-        self.remaining_mine_count = 10
+        self.total_mines = 10
+        self.remaining_mine_count = self.total_mines
 
         # Generate grid
         self.grid = [[Cell() for i in range(self.cols)] for i in range(self.rows)]
@@ -97,6 +97,7 @@ class GameManager:
 
     def set_total_mines(self, total_mines):
         self.total_mines = total_mines
+        self.remaining_mine_count = total_mines
 
     def hide_cell(self, r, c):
         self.grid[r][c].hidden = False
@@ -152,7 +153,7 @@ class GameManager:
         seed_num = random.Random(self.seed)
 
         # Select unique mine positions across the grid
-        mine_positions = seed_num.sample(range(rows * cols), self.mine_count)
+        mine_positions = seed_num.sample(range(rows * cols), self.total_mines)
 
         for pos in mine_positions:
             # Convert 1D position -> (row, col)
