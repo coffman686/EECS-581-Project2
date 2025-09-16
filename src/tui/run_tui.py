@@ -16,21 +16,35 @@ class Frontend():
         self.alphabet = "abcdefghijklmnopqrstuvwxyz"
 
     def set_num_mines(self):
-        self.stdscr.addstr(0, 0, "Enter the number of mines for this game: (CTRL-G to send)")
+        self.stdscr.addstr(0, 0, "Enter the number of mines for this game: (Press Enter to send)")
 
-        editwin = curses.newwin(5,30, 2,1)
-        rectangle(self.stdscr, 1,0, 1+5+1, 1+30+1)
+        editwin = curses.newwin(5, 30, 2, 1)
+        rectangle(self.stdscr, 1, 0, 1 + 5 + 1, 1 + 30 + 1)
         self.stdscr.refresh()
 
         box = Textbox(editwin)
 
-        # Let the user edit until Ctrl-G is struck.
-        box.edit()
+        # Remap Enter to submit instead of Ctrl-G (can change)
+        def enter_terminate(ch):
+            if ch == 10:
+                return 7
+            return ch
+
+        box.edit(enter_terminate)
 
         # Get resulting contents
-        num_mines = box.gather()
-        num_mines = int(num_mines.strip())
-        self.game_manager.set_total_mines(num_mines)
+        num_mines = box.gather().strip()
+        try:
+            num_mines = int(num_mines)
+            if num_mines < 1 or num_mines >= ROWS * COLS:
+                raise ValueError("Invalid number of mines.")
+            
+            self.game_manager.set_total_mines(num_mines)
+        except ValueError:
+            self.stdscr.addstr(8, 0, "Error: Please enter a valid number between 1 and {}.".format(ROWS * COLS - 1))
+            self.stdscr.refresh()
+            curses.napms(1500)
+            self.set_num_mines()
 
     def center_offsets(self, scr_h, scr_w, rows, cols, cw, ch):
         board_w = cols * cw
@@ -86,10 +100,6 @@ class Frontend():
     def start_game(self):
         self.draw_start_screen()
 
-        sh, sw = self.stdscr.getmaxyx()
-        off_y, _ = self.center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
-
-        mode = "menu"
         while True: 
             success = self.process_input(self.get_input())
             if self.game_manager.should_quit or not success:
@@ -194,6 +204,13 @@ class Frontend():
     def get_input(self):
         return self.stdscr.getch()
     
+    def check_game_status(self):
+        if self.game_manager.game_status == GameStatus.WIN: 
+            return self.display_win_screen()
+        elif self.game_manager.game_status == GameStatus.LOSE:
+            return self.display_loss_screen()
+        return None
+    
     def process_input(self, ch):
         if ch == ord('q'):
             self.game_manager.should_quit = True
@@ -214,6 +231,7 @@ class Frontend():
                 return True
             r, c = pos
             self.cur_r, self.cur_c = r, c
+
             # Left-click (terminals vary: check CLICKED/PRESSED)
             if bstate & curses.BUTTON1_CLICKED or bstate & curses.BUTTON1_PRESSED:
                 self.handle_left_click(r, c)
@@ -221,6 +239,15 @@ class Frontend():
 
                 # testing this
                 self.game_manager.handle_clicked_cell(r, c)
+
+                # Check on game status
+                result = self.check_game_status()
+                if result == 'quit':
+                    self.game_manager.should_quit = True
+                    return False
+                elif result == 'play_again':
+                    self.reset_game()
+                    return True
 
             # Right-click
             elif bstate & curses.BUTTON3_CLICKED or bstate & curses.BUTTON3_PRESSED:
@@ -237,4 +264,80 @@ class Frontend():
         elif ch in (ord(' '), ord('\n')):     self.handle_left_click(self.cur_r, self.cur_c)
         elif ch in (ord('f'), ord('F')):      self.handle_left_click(self.cur_r, self.cur_c)
         return True
+    
+    def reset_game(self):
+        self.stdscr.erase()
+        self.game_manager = GameManager()
+        self.cur_r = 0
+        self.cur_c = 0
+        self.clicked_cells = []
+        self.set_num_mines()
+        self.draw_board()
 
+    def display_game_update(self, message_object):
+        self.stdscr.erase()
+        sh, sw = self.stdscr.getmaxyx()
+
+        while not self.correct_terminal_size(sh, sw):
+            self.display_size_warning()
+            sh, sw = self.stdscr.getmaxyx()
+        
+        off_y, _ = self.center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
+
+        main_message = message_object['main_message']
+        sub_message = message_object['sub_message']
+        control_options = message_object['control_options']
+
+        main_message_x = max((sw - len(main_message)) // 2, 0)
+        sub_message_x = max((sw - len(sub_message)) // 2, 0)
+        control_options_x = max((sw - len(control_options)) // 2, 0)
+
+        while True:
+            try:
+                self.stdscr.addstr(off_y, main_message_x, main_message)
+                self.stdscr.addstr(off_y + 2, sub_message_x, sub_message)
+                self.stdscr.addstr(off_y + 4, control_options_x, control_options)
+                self.stdscr.refresh()
+
+                # Get user response
+                curses.echo()
+                s = self.stdscr.getstr(off_y + 4, 
+                                    control_options_x + len(control_options),
+                                    1).decode()
+
+                if s.lower() == 'q': 
+                    return 'quit'
+                elif s.lower() == 'p':
+                    return 'play_again'
+                else: 
+                    raise Exception
+
+            except Exception: 
+                curses.noecho()
+                self.stdscr.erase()
+
+                error_message = "Invalid input. Please try again"
+                error_left_padding = max((sw - len(error_message)) // 2, 0)
+
+                self.stdscr.addstr(off_y + 6, error_left_padding, error_message)
+                self.stdscr.refresh()
+                continue
+
+            finally: 
+                curses.noecho()
+                
+    def display_win_screen(self):
+        msg_obj = { 
+            'main_message': "Congratulations -- You Win!", 
+            'sub_message': "Great job, Champion! You're a force to be reckoned with!",
+            'control_options': "p=Play Again  q=Quit: ",
+        }
+        return self.display_game_update(msg_obj)
+        
+    def display_loss_screen(self): 
+        msg_obj = { 
+            'main_message': "Sorry :( -- You Lost! ", 
+            'sub_message': "This one wasn't your game...",
+            'control_options': "p=Play Again  q=Quit: ",
+        }
+        return self.display_game_update(msg_obj)
