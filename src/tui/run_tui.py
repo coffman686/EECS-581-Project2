@@ -16,6 +16,16 @@ class Frontend():
         self.alphabet = "abcdefghijklmnopqrstuvwxyz"
 
     def set_num_mines(self):
+        self.stdscr.erase()
+        sh, sw = self.stdscr.getmaxyx()
+
+        while not self.correct_terminal_size(sh, sw):
+            self.display_size_warning()
+            sh, sw = self.stdscr.getmaxyx()
+            self.stdscr.refresh()
+            curses.napms(100)
+            self.stdscr.erase()
+
         self.stdscr.addstr(0, 0, "Enter the number of mines for this game: (Press Enter to send)")
 
         editwin = curses.newwin(5, 30, 2, 1)
@@ -59,6 +69,7 @@ class Frontend():
         return True
 
     def display_size_warning(self):
+        self.stdscr.erase()
         warning = "Terminal too small! Please resize window."
         self.stdscr.addstr(0, 0, warning)
         self.stdscr.refresh()
@@ -75,10 +86,9 @@ class Frontend():
         sh, sw = self.stdscr.getmaxyx()
         start_key = self.find_start_key()
 
-        while not self.correct_terminal_size(sh, sw):
+        if not self.correct_terminal_size(sh, sw):
             self.display_size_warning()
-            sh, sw = self.stdscr.getmaxyx()
-            self.correct_terminal_size(sh, sw)
+            return False
 
         off_y, _ = self.center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
 
@@ -96,18 +106,25 @@ class Frontend():
         self.stdscr.addstr(off_y + 2, prompt_scr_x, prompt)
         self.stdscr.addstr(off_y + 4, controls_scr_x, controls)
         self.stdscr.refresh()
-
+        
+        return True
+    
     def start_game(self):
-        self.draw_start_screen()
-
-        # Wait for start input
         while True:
+            if not self.draw_start_screen():    
+                ch = self.get_input()
+                if ch == curses.KEY_RESIZE:
+                    continue    
+                continue
+            
             ch = self.get_input()
             if ch in (ord('\n'), ord('\r')):
                 break
             elif ch == ord('q'):
                 self.game_manager.should_quit = True
                 return
+            elif ch == curses.KEY_RESIZE:
+                continue
             continue
 
         # Draw initial board
@@ -233,7 +250,7 @@ class Frontend():
             return False
 
         if ch == curses.KEY_RESIZE:
-            self.draw_board(self.stdscr)
+            self.draw_board()
             return True
 
         if ch == curses.KEY_MOUSE:
@@ -291,24 +308,29 @@ class Frontend():
         self.draw_board()
 
     def display_game_update(self, message_object):
-        self.stdscr.erase()
-        sh, sw = self.stdscr.getmaxyx()
-
-        while not self.correct_terminal_size(sh, sw):
-            self.display_size_warning()
-            sh, sw = self.stdscr.getmaxyx()
-        
-        off_y, _ = self.center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
-
         main_message = message_object['main_message']
         sub_message = message_object['sub_message']
         control_options = message_object['control_options']
 
-        main_message_x = max((sw - len(main_message)) // 2, 0)
-        sub_message_x = max((sw - len(sub_message)) // 2, 0)
-        control_options_x = max((sw - len(control_options)) // 2, 0)
-
         while True:
+            self.stdscr.erase()
+            sh, sw = self.stdscr.getmaxyx()
+
+            # Check terminal size and handle resize events
+            if not self.correct_terminal_size(sh, sw):
+                self.display_size_warning()
+                self.stdscr.refresh()
+                ch = self.stdscr.getch()
+                if ch == curses.KEY_RESIZE:
+                    continue
+                continue
+            
+            off_y, _ = self.center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
+
+            main_message_x = max((sw - len(main_message)) // 2, 0)
+            sub_message_x = max((sw - len(sub_message)) // 2, 0)
+            control_options_x = max((sw - len(control_options)) // 2, 0)
+
             try:
                 self.stdscr.addstr(off_y, main_message_x, main_message)
                 self.stdscr.addstr(off_y + 2, sub_message_x, sub_message)
@@ -322,8 +344,10 @@ class Frontend():
                                     1).decode()
 
                 if s.lower() == 'q': 
+                    curses.noecho()
                     return 'quit'
                 elif s.lower() == 'p':
+                    curses.noecho()
                     return 'play_again'
                 else: 
                     raise Exception
@@ -338,9 +362,6 @@ class Frontend():
                 self.stdscr.addstr(off_y + 6, error_left_padding, error_message)
                 self.stdscr.refresh()
                 continue
-
-            finally: 
-                curses.noecho()
                 
     def display_win_screen(self):
         msg_obj = { 
