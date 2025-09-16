@@ -100,12 +100,28 @@ class Frontend():
     def start_game(self):
         self.draw_start_screen()
 
-        while True: 
-            success = self.process_input(self.get_input())
+        # Wait for start input
+        while True:
+            ch = self.get_input()
+            if ch in (ord('\n'), ord('\r')):
+                break
+            elif ch == ord('q'):
+                self.game_manager.should_quit = True
+                return
+            continue
+
+        # Draw initial board
+        self.draw_board()
+
+        # Main game loop
+        while True:
+            ch = self.get_input()
+            success = self.process_input(ch)
+            
             if self.game_manager.should_quit or not success:
                 break
-            else:
-                self.draw_board()
+                
+            self.draw_board()
 
     def draw_board(self):
         """Draw the game board on the screen"""
