@@ -99,7 +99,7 @@ class GameManager:
         self.total_mines = total_mines
         self.remaining_mine_count = total_mines
 
-    def hide_cell(self, r, c):
+    def reveal_cell(self, r, c):
         self.grid[r][c].hidden = False
     
     def place_flag(self, r, c):
@@ -175,7 +175,13 @@ class GameManager:
 
                     # Only update if neighbor is inside grid bounds
                     if 0 <= temp_row < rows and 0 <= temp_col < cols:
-                        self.grid[temp_row][temp_col].adjacent += 1
+                        # Also do not update adjacent count if the cell has a mine.
+                        if self.grid[temp_row][temp_col].has_mine() == False:
+                            # If cell state is -1, add 2 so it becomes 1, otherwise just add 1.
+                            if self.grid[temp_row][temp_col].adjacent == -1:
+                                self.grid[temp_row][temp_col].adjacent += 2
+                            else:
+                                self.grid[temp_row][temp_col].adjacent += 1
 
     def handle_clicked_cell(self, i, j):
         """
@@ -195,8 +201,10 @@ class GameManager:
         Order to check:
             Flagged? -> Has mine? -> 0 or Not-0 adjacent mines?
         """
-        i_pos = i
-        j_pos = j
+
+        # Make sure the status is running.
+        self.change_state(GameStatus.PLAYING)
+
 
         clicked_cell = (self.grid[i][j])
         # Uses a "is_hidden" function which is not yet implemented in the cell class.
@@ -205,73 +213,82 @@ class GameManager:
 
         # If the cell has a flag on it, ignore.
         if is_flagged == True:
-            pass
+            return
         
         # If the cell is already revealed, ignore.
         if hidden_cell == False:
-            pass
+            return
 
         # Checks if the cell has a mine.
         is_a_mine = clicked_cell.has_mine()
 
-        # If the cell is a mine, reveal the square, transition to end of game.
+        # If the cell is a mine, reveal all the squares, change GameStatus to LOSE.
         if is_a_mine == True:
-            # Reveal square / New function to reveal cell?
-            self.grid[i][j].hidden = False
-
+            self.reveal_all()
+            self.change_state(GameStatus.LOSE)
+            return
             # Add behavior that transitions to end screen / ends game here.
 
-        # Gets the cell state to check if 
-        if clicked_cell.adjacent != 0:
+        # Reveal the cell if it has at least one adjacent mine.
+        if clicked_cell.adjacent > 0:
             # Reveal the square and its bomb count.
-            clicked_cell.hidden = False
-            
-        if clicked_cell.adjacent == 0:
-            rec_reveal(self, i_pos, j_pos)
+            self.reveal_cell(i, j)
+        # If it has no adjacent mines, recursively reveal other adjacent squares with 0 adjacent mines.
+        else:
+            self.rec_reveal(i, j)
+
+        # Check if the user has won the game.
+        # Not implemented.
+            # If so, update the game status to WIN
 
         return
 
-def rec_reveal(self, i, j):
-    # Recursively reveal all the cells around the current cell that have 0 adjacent mines in the 8 nearby directions.
-        # Care must be taken to ensure that no out of bounds errors occur.
-        # The recursive backtracking with all 8 cells might be slow since certain cells might get processed multiple times.
-    
-    # Get the cell object from coordinate i,j
-    current_cell = self.grid[i][j]
+    def rec_reveal(self, i, j):
+        # Recursively reveal all the cells around the current cell that have 0 adjacent mines in the 8 nearby directions.
+            # Care must be taken to ensure that no out of bounds errors occur.
+            # The recursive backtracking with all 8 cells might be slow since certain cells might get processed multiple times.
+        
+        # Get the cell object from coordinate i,j
+        current_cell = self.grid[i][j]
 
-    # If the cell has already been revealed, nothing needs to be done.
-    if not current_cell.hidden or current_cell.has_flag():
-        return
-    
-    # Since current cell has not been revealed, reveal it.
-    
-    current_cell.hidden = False
+        # If the cell has already been revealed, nothing needs to be done.
+        if not current_cell.hidden or current_cell.has_flag():
+            return
+        
+        # Since current cell has not been revealed, reveal it.
+        
+        self.reveal_cell(i, j)
 
-    # If the cell has an adjacent mine, do not recurse on it. Just return since it has already been revealed.
-    if current_cell.adjacent_mines > 0:
-        return
+        # If the cell has an adjacent mine, do not recurse on it. Just return since it has already been revealed.
+        if current_cell.adjacent > 0:
+            return
 
-    # NOTE: Use similar behavior to updating the mines counts, but instead of adding counts, calls rec_reveal on the adjacent squares, if their adjacent bomb count is also 0.
-    
-    # Get the row value, col value, # of rows, # of cols.
-    row = i
-    col = j
-    rows = len(self.grid)
-    cols = len(self.grid[0])
+        # NOTE: Use similar behavior to updating the mines counts, but instead of adding counts, calls rec_reveal on the adjacent squares, if their adjacent bomb count is also 0.
+        
+        # Get the row value, col value, # of rows, # of cols.
+        row = i
+        col = j
+        rows = len(self.grid)
+        cols = len(self.grid[0])
 
-    # Check the adjacent 8 cells to the current cell to see if they are in bounds, are not revealed.
-        # If so, reveals it.
-            # Then if that cell also has 0 adjacent mines, recursively reveal it and its neighbors.
+        # Check the adjacent 8 cells to the current cell to see if they are in bounds, are not revealed.
+            # If so, reveals it.
+                # Then if that cell also has 0 adjacent mines, recursively reveal it and its neighbors.
 
-    for adj_row in [-1, 0, 1]:
-        for adj_col in [-1, 0, 1]:
-        # Check to make sure not adjusting the count of where the mine is.
-            if (adj_row != 0 or adj_col != 0):
-                temp_row = row + adj_row
-                temp_col = col + adj_col
-                # Check if temp_row and temp_col are in bounds. If so, reveal it
-                if ((0 <= temp_row < rows) and (0 <= temp_col < cols)):
-                    self.grid[temp_row][temp_col].hidden = False
-                    # If the current cell has 0 as its count, call rec_reveal on it.
-                    if self.grid[temp_row][temp_col].adjacent_mines == 0:
+        for adj_row in [-1, 0, 1]:
+            for adj_col in [-1, 0, 1]:
+            # Check to make sure not adjusting the count of where the mine is.
+                if (adj_row != 0 or adj_col != 0):
+                    temp_row = row + adj_row
+                    temp_col = col + adj_col
+                    # Check if temp_row and temp_col are in bounds. If so, recursively reveal.
+                    if ((0 <= temp_row < rows) and (0 <= temp_col < cols)):
                         self.rec_reveal(temp_row, temp_col)
+        return
+
+    # Reveal all the cells on the grid. Gets called when a mine is pressed.
+    def reveal_all(self):
+        for row in range(self.rows):
+            for col in range(self.cols):
+                self.reveal_cell(row, col)
+        return

@@ -226,7 +226,7 @@ class Frontend():
         return None
 
     def handle_left_click(self, r, c):
-        self.game_manager.hide_cell(r, c)
+        self.game_manager.handle_clicked_cell(r, c)
 
     def handle_right_click(self, r, c):
         if self.game_manager.is_flagged(r, c):
