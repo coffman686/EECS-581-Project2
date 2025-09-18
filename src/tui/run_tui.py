@@ -134,7 +134,6 @@ class Frontend():
         while True:
             ch = self.get_input()
             success = self.process_input(ch)
-            
             self.draw_board()
             if self.game_manager.should_quit or not success:
                 break
@@ -155,7 +154,7 @@ class Frontend():
         sh, sw = self.stdscr.getmaxyx()
 
         # Print clicked cells at the top
-        clicks_str = "Clicked: " + ", ".join([f"({self.alphabet[r]},{c+1})" for r, c in self.clicked_cells])
+        clicks_str = "Clicked: " + ", ".join([f"({self.alphabet[r]},{c+1}) ADJ: {self.game_manager.grid[c][r].adjacent}" for r, c in self.clicked_cells])
         self.stdscr.addstr(0, 0, clicks_str[:sw-1])  # top row
 
         if not self.correct_terminal_size(sh, sw):
@@ -189,7 +188,7 @@ class Frontend():
                     ch = "H"
                 elif cell.state == CellState.MINED:
                     ch = "M" 
-                elif cell.state == CellState.HASADJACENT:
+                elif cell.adjacent != 0:
                     ch = str(cell.adjacent)
                 elif cell.state == CellState.MINE:
                     ch = "X"
