@@ -37,13 +37,16 @@ class Screen:
         pass
 
 class Cell:
-    def __init__(self):
+    def __init__(self, gameManager, row, col):
         # value >= 0 --> number of mines in a 9x9 are around the cell
         # value = -1 --> uninitialized
         self.state : None | CellState = None
         self.adjacent : int = -1
         self.hidden : bool = True
         self.flagged : bool = False
+        self.row = row
+        self.col = col
+        self.manager = gameManager
 
     def is_valid(self):
         return True if self.adjacent >= 0 else False
@@ -66,6 +69,13 @@ class Cell:
     def has_flag(self):
         return self.flagged
 
+    def count_adjacent_cells(self):
+        left_cell = self.mamager.grid[(self.col)][(self.row - 1) % self.manager.rows]
+        right_cell = self.mamager.grid[(self.col)][(self.row + 1) % self.manager.rows]
+
+        top_cell = self.mamager.grid[(self.col - 1) % self.manager.cols][(self.row)]
+        bottom_cell = self.mamager.grid[(self.col + 1) % self.manager.cols][(self.row)]
+
 class GameManager:
     def __init__(self, seed=None):
         """Constructor function for the GamerManager Class"""
@@ -82,7 +92,7 @@ class GameManager:
         self.remaining_mine_count = self.total_mines
 
         # Generate grid
-        self.grid = [[Cell() for i in range(self.cols)] for i in range(self.rows)]
+        self.grid = [[Cell(self, row,col) for col in range(self.cols)] for row in range(self.rows)]
 
         # Set game state to 'Starting'
         self.game_status = GameStatus.WELCOME

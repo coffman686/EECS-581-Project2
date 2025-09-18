@@ -134,7 +134,6 @@ class Frontend():
         while True:
             ch = self.get_input()
             success = self.process_input(ch)
-            
             self.draw_board()
             if self.game_manager.should_quit or not success:
                 break
@@ -190,7 +189,7 @@ class Frontend():
                 elif cell.state == CellState.MINED:
                     ch = "M" 
                 elif cell.state == CellState.HASADJACENT:
-                    ch = str(cell.adjacent)
+                    ch = str(cell.adjacent)[0]
                 elif cell.state == CellState.MINE:
                     ch = "X"
                 elif cell.state == CellState.NONEADJACENT:
