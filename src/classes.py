@@ -37,7 +37,7 @@ class Screen:
         pass
 
 class Cell:
-    def __init__(self, gameManager, row, col):
+    def __init__(self, gameManager, col, row):
         # value >= 0 --> number of mines in a 9x9 are around the cell
         # value = -1 --> uninitialized
         self.state : None | CellState = None
@@ -70,11 +70,23 @@ class Cell:
         return self.flagged
 
     def count_adjacent_cells(self):
-        left_cell = self.mamager.grid[(self.col)][(self.row - 1) % self.manager.rows]
-        right_cell = self.mamager.grid[(self.col)][(self.row + 1) % self.manager.rows]
+        left_cell = self.manager.grid[(self.row)][(self.col - 1) % self.manager.cols]
+        right_cell = self.manager.grid[(self.row)][(self.col + 1) % self.manager.cols]
 
-        top_cell = self.mamager.grid[(self.col - 1) % self.manager.cols][(self.row)]
-        bottom_cell = self.mamager.grid[(self.col + 1) % self.manager.cols][(self.row)]
+        top_cell = self.manager.grid[(self.row - 1) % self.manager.rows][(self.col)]
+        bottom_cell = self.manager.grid[(self.row + 1) % self.manager.rows][(self.col)]
+
+        top_left_cell = self.manager.grid[(self.row - 1) % self.manager.rows][(self.col - 1) % self.manager.cols]
+        top_right_cell = self.manager.grid[(self.row + 1) % self.manager.rows][(self.col - 1) % self.manager.cols]
+
+        bottom_right_cell = self.manager.grid[(self.row + 1) % self.manager.rows][(self.col + 1) % self.manager.cols]
+        bottom_left_cell = self.manager.grid[(self.row - 1) % self.manager.rows][(self.col + 1) % self.manager.cols]
+
+        cells = [left_cell, right_cell, top_cell, bottom_cell, top_left_cell, top_right_cell, bottom_right_cell, bottom_left_cell]
+    
+        self.adjacent = sum(1 for cell in cells if cell.state == CellState.MINE)
+        if self.adjacent > 0:
+            self.state = CellState.HASADJACENT
 
 class GameManager:
     def __init__(self, seed=None):
@@ -92,7 +104,7 @@ class GameManager:
         self.remaining_mine_count = self.total_mines
 
         # Generate grid
-        self.grid = [[Cell(self, row,col) for col in range(self.cols)] for row in range(self.rows)]
+        self.grid = [[Cell(self, col,row) for col in range(self.cols)] for row in range(self.rows)]
 
         # Set game state to 'Starting'
         self.game_status = GameStatus.WELCOME
@@ -103,7 +115,13 @@ class GameManager:
         else:
             self.seed = random.randrange(1 << 30)
 
+        self.count_adjacent_cells()
         self.generate_mines()
+
+    def count_adjacent_cells(self):
+        for row in self.grid:
+            for cell in row:
+                cell.count_adjacent_cells()
 
     def set_total_mines(self, total_mines):
         self.total_mines = total_mines
