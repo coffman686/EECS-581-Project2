@@ -81,6 +81,10 @@ class GameManager:
         self.total_mines = 10
         self.remaining_mine_count = self.total_mines
 
+        self.placed_flags = 0
+        self.total_flags = self.total_mines
+        self.remaining_flag_count = self.total_flags - self.placed_flags
+        
         # Generate grid
         self.grid = [[Cell() for i in range(self.cols)] for i in range(self.rows)]
 
@@ -103,10 +107,20 @@ class GameManager:
         self.grid[r][c].hidden = False
     
     def place_flag(self, r, c):
+        if self.remaining_flag_count <= 0 or self.grid[r][c].flagged:
+            return
+
         self.grid[r][c].flagged = True
-    
+        self.placed_flags += 1
+        self.remaining_flag_count -= 1
+
     def remove_flag(self, r, c):
+        if not self.grid[r][c].flagged:
+            return
+
         self.grid[r][c].flagged = False
+        self.placed_flags -= 1
+        self.remaining_flag_count += 1
 
     def is_flagged(self, r, c):
         return self.grid[r][c].flagged
