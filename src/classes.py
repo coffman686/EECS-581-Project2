@@ -91,6 +91,8 @@ class Cell:
 class GameManager:
     def __init__(self, seed=None):
         """Constructor function for the GamerManager Class"""
+        self.is_first_click = True
+
         self.screen = Screen()
         self.should_quit = False
 
@@ -120,7 +122,6 @@ class GameManager:
             self.seed = random.randrange(1 << 30)
 
         self.count_adjacent_cells()
-        self.generate_mines()
 
     def count_adjacent_cells(self):
         for row in self.grid:
@@ -185,7 +186,7 @@ class GameManager:
             case _:
                 pass
             
-    def generate_mines(self):
+    def generate_mines(self, i, j):
         """Randomly places mines on the grid"""
 
         rows = len(self.grid)
@@ -196,6 +197,10 @@ class GameManager:
 
         # Select unique mine positions across the grid
         mine_positions = seed_num.sample(range(rows * cols), self.total_mines)
+
+        while(sum(1 for pos in mine_positions if pos // cols == i and pos % cols == j) >= 1): # ensure we don't create mines on first click position
+            mine_positions = seed_num.sample(range(rows * cols), self.total_mines)
+
 
         for pos in mine_positions:
             # Convert 1D position -> (row, col)
@@ -225,6 +230,11 @@ class GameManager:
                             else:
                                 self.grid[temp_row][temp_col].adjacent += 1
 
+    def handle_first_click(self, i, j):
+            self.is_first_click = False
+            self.generate_mines(i, j)
+
+
     def handle_clicked_cell(self, i, j):
         """
         Once cell is left clicked, reveal the cell.
@@ -243,7 +253,8 @@ class GameManager:
         Order to check:
             Flagged? -> Has mine? -> 0 or Not-0 adjacent mines?
         """
-
+        if(self.is_first_click == True):
+            self.handle_first_click(i, j)
         clicked_cell = (self.grid[i][j])
         # Uses a "is_hidden" function which is not yet implemented in the cell class.
         hidden_cell = clicked_cell.is_hidden()
