@@ -132,10 +132,10 @@ class Frontend():
 
         # Main game loop
         while True:
-            self.draw_board()
             ch = self.get_input()
             success = self.process_input(ch)
             
+            self.draw_board()
             if self.game_manager.should_quit or not success:
                 break
                 
