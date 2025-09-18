@@ -63,7 +63,7 @@ class Frontend():
         off_x = max((scr_w - board_w) // 2, 0)
         return off_y, off_x
 
-    def correct_terminal_size(self, scr_h, sch_w, required_h = (ROWS + 1) * CELL_H + 3, required_w = (COLS + 1) * CELL_W):
+    def correct_terminal_size(self, scr_h, sch_w, required_h = (ROWS + 1) * CELL_H + 4, required_w = (COLS + 1) * CELL_W):
         if scr_h < required_h or sch_w < required_w: 
             return False
         return True
@@ -211,9 +211,14 @@ class Frontend():
             f"Remaining Mines: {self.game_manager.remaining_mine_count}"
         )
         self.stdscr.addstr(sh-2, 0,
+            f"Remaining Flags: {self.game_manager.remaining_flag_count}"
+        )
+
+        self.stdscr.addstr(sh-3, 0,
             f"Game State: {str(self.game_manager.game_status)[11:]}"
         )
-        self.stdscr.addstr(sh-3, 0,
+
+        self.stdscr.addstr(sh-4, 0,
             "Arrows=move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit  ",
         )
         self.stdscr.clrtoeol()
