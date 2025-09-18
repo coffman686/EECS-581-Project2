@@ -34,7 +34,7 @@ class Frontend():
 
         box = Textbox(editwin)
 
-        # Remap Enter to submit instead of Ctrl-G (can change)
+        # Remap Enter to submit instead of Ctrl-G
         def enter_terminate(ch):
             if ch == 10:
                 return 7
@@ -141,6 +141,7 @@ class Frontend():
                 
 
     def draw_board(self):
+        """Draw the game board on the screen"""
         result = self.check_game_status()
         if result == 'quit':
             self.game_manager.should_quit = True
@@ -148,8 +149,6 @@ class Frontend():
         elif result == 'play_again':
             self.reset_game()
             return True
-
-        """Draw the game board on the screen"""
 
         self.stdscr.erase()
         sh, sw = self.stdscr.getmaxyx()
@@ -185,7 +184,7 @@ class Frontend():
 
                 if cell.flagged:
                     ch = "⚑"
-                if cell.hidden and not cell.flagged:
+                elif cell.hidden:
                     ch = "H"
                 elif cell.state == CellState.MINED:
                     ch = "M" 
@@ -195,7 +194,7 @@ class Frontend():
                     ch = "X"
                 elif cell.state == CellState.NONEADJACENT:
                     ch = " "
-                elif cell.state is None and not cell.flagged:
+                elif cell.state is None:
                     ch = " "
 
                 # highlight cursor
