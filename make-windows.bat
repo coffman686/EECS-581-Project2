@@ -1,0 +1,1 @@
+pyinstaller src/main.py --clean --onefile --distpath dist-windows --workpath build-windows --name Minesweeper --specpath spec-windows --noconfirm
