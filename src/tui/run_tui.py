@@ -202,7 +202,7 @@ class Frontend():
             f"Remaining Mines: {self.game_manager.remaining_mine_count}"
         )
         self.stdscr.addstr(sh-2, 0,
-            f"Game State: {self.game_manager.game_status}"
+            f"Game State: {str(self.game_manager.game_status)[11:]}"
         )
         self.stdscr.addstr(sh-3, 0,
             "Arrows=move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit  ",
