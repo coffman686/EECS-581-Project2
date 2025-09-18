@@ -82,8 +82,8 @@ class GameManager:
         self.remaining_mine_count = self.total_mines
 
         self.placed_flags = 0
-        self.total_flags = self.total_mines
-        self.remaining_flag_count = self.total_flags - self.placed_flags
+        self.total_flags = 0
+        self.remaining_flag_count = 0
         
         # Generate grid
         self.grid = [[Cell() for i in range(self.cols)] for i in range(self.rows)]

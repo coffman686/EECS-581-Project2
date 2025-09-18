@@ -50,6 +50,8 @@ class Frontend():
                 raise ValueError("Invalid number of mines.")
             
             self.game_manager.set_total_mines(num_mines)
+            self.game_manager.total_flags = num_mines
+            self.game_manager.remaining_flag_count = num_mines
         except ValueError:
             self.stdscr.addstr(8, 0, "Error: Please enter a valid number between 1 and {}.".format(ROWS * COLS - 1))
             self.stdscr.refresh()
