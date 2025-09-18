@@ -137,11 +137,20 @@ class Frontend():
             
             if self.game_manager.should_quit or not success:
                 break
-                
             self.draw_board()
+                
 
     def draw_board(self):
+        result = self.check_game_status()
+        if result == 'quit':
+            self.game_manager.should_quit = True
+            return False
+        elif result == 'play_again':
+            self.reset_game()
+            return True
+
         """Draw the game board on the screen"""
+
         self.stdscr.erase()
         sh, sw = self.stdscr.getmaxyx()
 
@@ -273,14 +282,6 @@ class Frontend():
                 # testing this
                 self.game_manager.handle_clicked_cell(r, c)
 
-                # Check on game status
-                result = self.check_game_status()
-                if result == 'quit':
-                    self.game_manager.should_quit = True
-                    return False
-                elif result == 'play_again':
-                    self.reset_game()
-                    return True
 
             # Right-click
             elif bstate & curses.BUTTON3_CLICKED or bstate & curses.BUTTON3_PRESSED:
@@ -338,15 +339,10 @@ class Frontend():
                 self.stdscr.refresh()
 
                 # Get user response
-                curses.echo()
-                s = self.stdscr.getstr(off_y + 4, 
-                                    control_options_x + len(control_options),
-                                    1).decode()
-
-                if s.lower() == 'q': 
-                    curses.noecho()
+                ch = self.get_input()
+                if ch == ord('q'): 
                     return 'quit'
-                elif s.lower() == 'p':
+                elif ch == ord('p'):
                     curses.noecho()
                     return 'play_again'
                 else: 

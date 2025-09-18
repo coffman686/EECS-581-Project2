@@ -202,10 +202,6 @@ class GameManager:
             Flagged? -> Has mine? -> 0 or Not-0 adjacent mines?
         """
 
-        # Make sure the status is running.
-        self.change_state(GameStatus.PLAYING)
-
-
         clicked_cell = (self.grid[i][j])
         # Uses a "is_hidden" function which is not yet implemented in the cell class.
         hidden_cell = clicked_cell.is_hidden()
