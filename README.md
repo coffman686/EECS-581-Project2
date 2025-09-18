@@ -18,8 +18,4 @@ the operating system in use and if all software has been updated. Windows 10 may
 The best options are WSL, Linux, or Windows 11. 
 
 ### How to build
-<<<<<<< HEAD
 Depending on your platform (you will need to have the dependencies), run either the make-linux.sh or make-windows.bat scripts.
-=======
-Depending on your platform (you will need to have the dependencies), run either the make-linux.sh or make-windows.bat scripts.
->>>>>>> e510e54 (Update README for new build system.)
