@@ -15,27 +15,6 @@ class GameStatus(Enum):
     WIN = 4
     END = 5
 
-# Think of this like the frontend manager. When the backend needs to change the state
-# of the frontend, it will call these methods.
-class Screen:
-    def set_welcome(self):
-        pass
-
-    def set_start(self):
-        pass
-
-    def set_playing(self):
-        pass
-
-    def set_lose(self):
-        pass
-
-    def set_win(self):
-        pass
-
-    def set_end(self):
-        pass
-
 class Cell:
     def __init__(self, gameManager, col, row):
         # value >= 0 --> number of mines in a 9x9 are around the cell
@@ -87,13 +66,13 @@ class Cell:
         self.adjacent = sum(1 for cell in cells if cell.state == CellState.MINE)
         if self.adjacent > 0:
             self.state = CellState.HASADJACENT
+    
 
 class GameManager:
     def __init__(self, seed=None):
         """Constructor function for the GamerManager Class"""
         self.is_first_click = True
 
-        self.screen = Screen()
         self.should_quit = False
 
         # Save number of rows & cols
@@ -167,22 +146,16 @@ class GameManager:
         match status:
             case GameStatus.WELCOME:
                 self.game_status = GameStatus.WELCOME
-                self.screen.set_welcome()
             case GameStatus.STARTING:
                 self.game_status = GameStatus.STARTING
-                self.screen.set_start()
             case GameStatus.PLAYING:
                 self.game_status = GameStatus.PLAYING
-                self.screen.set_playing()
             case GameStatus.LOSE:
                 self.game_status = GameStatus.LOSE
-                self.screen.set_lose()
             case GameStatus.WIN:
                 self.game_status = GameStatus.WIN
-                self.screen.set_win()
             case GameStatus.END:
                 self.game_status = GameStatus.END
-                self.screen.set_end()
             case _:
                 pass
             
@@ -287,10 +260,18 @@ class GameManager:
             self.rec_reveal(i, j)
 
         # Check if the user has won the game.
-        # Not implemented.
-            # If so, update the game status to WIN
+        if self.check_win():
+            self.change_state(GameStatus.WIN)
+            return
 
         return
+    
+    def check_win(self):
+        for row in self.grid:
+            for cell in row:
+                if cell.is_hidden() and not cell.has_mine():
+                    return False
+        return True
 
     def rec_reveal(self, i, j):
         # Recursively reveal all the cells around the current cell that have 0 adjacent mines in the 8 nearby directions.

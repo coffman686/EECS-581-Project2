@@ -21,6 +21,5 @@ def main(stdscr):
     stdscr.refresh()
     frontend.start_game()
 
-
 if __name__ == "__main__":
     curses.wrapper(main)
