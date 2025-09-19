@@ -143,37 +143,36 @@ class Frontend():
 
     def draw_board(self):
         """Draw the game board on the screen"""
-        result = self.check_game_status()
-        if result == 'quit':
-            self.game_manager.should_quit = True
-            return False
-        elif result == 'play_again':
-            self.reset_game()
-            return True
 
+        # Clear the screen for fresh drawing
         self.stdscr.erase()
         sh, sw = self.stdscr.getmaxyx()
 
-        # Print clicked cells at the top
-        clicks_str = "Clicked: " + ", ".join([f"({self.alphabet[c]},{r+1}) ADJ: {self.game_manager.grid[c][r].adjacent}" for r, c in self.clicked_cells])
-        self.stdscr.addstr(0, 0, clicks_str[:sw-1])  # top row
+        # Print clicked cells at the top (currently commented out)
+        # clicks_str = "Clicked: " + ", ".join(
+        #     [f"({self.alphabet[c]},{r+1}) ADJ: {self.game_manager.grid[c][r].adjacent}" for r, c in self.clicked_cells]
+        # )
+        # self.stdscr.addstr(0, 0, clicks_str[:sw-1])  # top row
 
+        # Handle incorrect terminal size
         if not self.correct_terminal_size(sh, sw):
             self.display_size_warning()
             return
 
+        # Calculate offsets for centering board
         off_y, off_x = self.center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
 
-        # Draw column numbers
+        # Draw column letters
         for c in range(COLS):
             x = off_x + c * CELL_W
             self.stdscr.addstr(off_y - 1, x + 1, f"{self.alphabet[c]}")
 
-        # Draw row letters
+        # Draw row numbers
         for r in range(ROWS):
             y = off_y + r * CELL_H
             self.stdscr.addstr(y, off_x - 2, f"{r+1}")
 
+        # Draw the cells of the board
         for r in range(ROWS):
             for c in range(COLS):
                 # Get cell and render output depending on cell status
@@ -188,7 +187,7 @@ class Frontend():
                 elif cell.hidden:
                     ch = "H"
                 elif cell.state == CellState.MINED:
-                    ch = "M" 
+                    ch = "M"
                 elif cell.adjacent != 0:
                     ch = str(cell.adjacent)
                 elif cell.state == CellState.MINE:
@@ -198,7 +197,7 @@ class Frontend():
                 elif cell.state is None:
                     ch = " "
 
-                # highlight cursor
+                # Highlight cursor
                 if (self.cur_r, self.cur_c) == (r, c):
                     self.stdscr.attron(curses.A_REVERSE)
                     self.stdscr.addstr(y, x, f"[{ch}]")
@@ -207,22 +206,29 @@ class Frontend():
                     self.stdscr.addstr(y, x, f"[{ch}]")
 
         # Simple help bar
-        self.stdscr.addstr(sh-1, 0,
+        self.stdscr.addstr(sh - 1, 0,
             f"Remaining Mines: {self.game_manager.remaining_mine_count}"
         )
-        self.stdscr.addstr(sh-2, 0,
+        self.stdscr.addstr(sh - 2, 0,
             f"Remaining Flags: {self.game_manager.remaining_flag_count}"
         )
-
-        self.stdscr.addstr(sh-3, 0,
+        self.stdscr.addstr(sh - 3, 0,
             f"Game State: {str(self.game_manager.game_status)[11:]}"
         )
-
-        self.stdscr.addstr(sh-4, 0,
+        self.stdscr.addstr(sh - 4, 0,
             "Arrows=move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit  ",
         )
         self.stdscr.clrtoeol()
         self.stdscr.refresh()
+
+        # AFTER drawing the board, check if game over
+        result = self.check_game_status()
+        if result == 'quit':
+            self.game_manager.should_quit = True
+            return False
+        elif result == 'play_again':
+            self.reset_game()
+            return True
 
     def mouse_to_cell(self, mx, my):
         """Processes user clicks on cells"""
@@ -320,10 +326,8 @@ class Frontend():
         control_options = message_object['control_options']
 
         while True:
-            self.stdscr.erase()
             sh, sw = self.stdscr.getmaxyx()
 
-            # Check terminal size and handle resize events
             if not self.correct_terminal_size(sh, sw):
                 self.display_size_warning()
                 self.stdscr.refresh()
@@ -334,36 +338,39 @@ class Frontend():
             
             off_y, _ = self.center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
 
+            # Place messages just below the board
+            msg_y = off_y + ROWS * CELL_H + 1
+
             main_message_x = max((sw - len(main_message)) // 2, 0)
             sub_message_x = max((sw - len(sub_message)) // 2, 0)
             control_options_x = max((sw - len(control_options)) // 2, 0)
 
             try:
-                self.stdscr.addstr(off_y, main_message_x, main_message)
-                self.stdscr.addstr(off_y + 2, sub_message_x, sub_message)
-                self.stdscr.addstr(off_y + 4, control_options_x, control_options)
+                self.stdscr.addstr(msg_y, main_message_x, main_message)
+                self.stdscr.addstr(msg_y + 1, sub_message_x, sub_message)
+                self.stdscr.addstr(msg_y + 2, control_options_x, control_options)
                 self.stdscr.refresh()
 
-                # Get user response
                 ch = self.get_input()
-                if ch == ord('q'): 
+                if ch == ord('q'):
                     return 'quit'
                 elif ch == ord('p'):
                     curses.noecho()
                     return 'play_again'
-                else: 
+                else:
                     raise Exception
 
             except Exception: 
                 curses.noecho()
-                self.stdscr.erase()
 
                 error_message = "Invalid input. Please try again"
                 error_left_padding = max((sw - len(error_message)) // 2, 0)
 
-                self.stdscr.addstr(off_y + 6, error_left_padding, error_message)
+                error_y = min(msg_y + 4, sh - 1)  # clamp to last row
+                self.stdscr.addstr(error_y, error_left_padding, error_message[:sw-1])
                 self.stdscr.refresh()
                 continue
+
                 
     def display_win_screen(self):
         msg_obj = { 
@@ -373,7 +380,7 @@ class Frontend():
         }
         return self.display_game_update(msg_obj)
         
-    def display_loss_screen(self): 
+    def display_loss_screen(self):
         msg_obj = { 
             'main_message': "Sorry :( -- You Lost! ", 
             'sub_message': "This one wasn't your game...",
