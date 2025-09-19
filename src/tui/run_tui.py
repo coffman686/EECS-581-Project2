@@ -155,7 +155,7 @@ class Frontend():
         sh, sw = self.stdscr.getmaxyx()
 
         # Print clicked cells at the top
-        clicks_str = "Clicked: " + ", ".join([f"({self.alphabet[r]},{c+1}) ADJ: {self.game_manager.grid[c][r].adjacent}" for r, c in self.clicked_cells])
+        clicks_str = "Clicked: " + ", ".join([f"({self.alphabet[c]},{r+1}) ADJ: {self.game_manager.grid[c][r].adjacent}" for r, c in self.clicked_cells])
         self.stdscr.addstr(0, 0, clicks_str[:sw-1])  # top row
 
         if not self.correct_terminal_size(sh, sw):
@@ -167,12 +167,12 @@ class Frontend():
         # Draw column numbers
         for c in range(COLS):
             x = off_x + c * CELL_W
-            self.stdscr.addstr(off_y - 1, x + 1, f"{c+1}")
+            self.stdscr.addstr(off_y - 1, x + 1, f"{self.alphabet[c]}")
 
         # Draw row letters
         for r in range(ROWS):
             y = off_y + r * CELL_H
-            self.stdscr.addstr(y, off_x - 2, f"{self.alphabet[r]}")
+            self.stdscr.addstr(y, off_x - 2, f"{r+1}")
 
         for r in range(ROWS):
             for c in range(COLS):
