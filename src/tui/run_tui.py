@@ -1,165 +1,386 @@
 import curses
-from ..classes import GameManager, Cell, CellState
+from curses.textpad import Textbox, rectangle
+import platform
+from src.classes import GameManager, Cell, CellState, GameStatus
 
 ROWS, COLS = 10, 10
 CELL_W, CELL_H = 3, 1   # 3 chars per cell, 1 row high
 
-def run():
-    curses.wrapper(main)
+class Frontend():
+    def __init__(self, stdscr):
+        self.stdscr = stdscr
+        self.game_manager = GameManager()
+        self.cur_r = 0
+        self.cur_c = 0
+        self.clicked_cells = []
+        self.alphabet = "abcdefghijklmnopqrstuvwxyz"
 
-def center_offsets(scr_h, scr_w, rows, cols, cw, ch):
-    board_w = cols * cw
-    board_h = rows * ch
-    off_y = max((scr_h - board_h) // 2, 0)
-    off_x = max((scr_w - board_w) // 2, 0)
-    return off_y, off_x
+    def set_num_mines(self):
+        self.stdscr.erase()
+        sh, sw = self.stdscr.getmaxyx()
 
-def draw_board(stdscr, grid, gameManager, cursor=None):
-    stdscr.erase()
-    sh, sw = stdscr.getmaxyx()
-    off_y, off_x = center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
+        while not self.correct_terminal_size(sh, sw):
+            self.display_size_warning()
+            sh, sw = self.stdscr.getmaxyx()
+            self.stdscr.refresh()
+            curses.napms(100)
+            self.stdscr.erase()
 
-    for r in range(ROWS+1):
-        alphabet = "abcdefghijklmnopqrstuvwxyz"
-        for c in range(COLS+1):
-            y = off_y + r * CELL_H
+        self.stdscr.addstr(0, 0, "Enter the number of mines for this game: (Press Enter to send)")
+
+        editwin = curses.newwin(5, 30, 2, 1)
+        rectangle(self.stdscr, 1, 0, 1 + 5 + 1, 1 + 30 + 1)
+        self.stdscr.refresh()
+
+        box = Textbox(editwin)
+
+        # Remap Enter to submit instead of Ctrl-G
+        def enter_terminate(ch):
+            if ch == 10:
+                return 7
+            return ch
+
+        box.edit(enter_terminate)
+
+        # Get resulting contents
+        num_mines = box.gather().strip()
+        try:
+            num_mines = int(num_mines)
+            if num_mines < 1 or num_mines >= ROWS * COLS:
+                raise ValueError("Invalid number of mines.")
+            
+            self.game_manager.set_total_mines(num_mines)
+            self.game_manager.total_flags = num_mines
+            self.game_manager.remaining_flag_count = num_mines
+        except ValueError:
+            self.stdscr.addstr(8, 0, "Error: Please enter a valid number between 1 and {}.".format(ROWS * COLS - 1))
+            self.stdscr.refresh()
+            curses.napms(1500)
+            self.set_num_mines()
+
+    def center_offsets(self, scr_h, scr_w, rows, cols, cw, ch):
+        board_w = cols * cw
+        board_h = rows * ch
+        off_y = max((scr_h - board_h) // 2, 0)
+        off_x = max((scr_w - board_w) // 2, 0)
+        return off_y, off_x
+
+    def correct_terminal_size(self, scr_h, sch_w, required_h = (ROWS + 1) * CELL_H + 4, required_w = (COLS + 1) * CELL_W):
+        if scr_h < required_h or sch_w < required_w: 
+            return False
+        return True
+
+    def display_size_warning(self):
+        self.stdscr.erase()
+        warning = "Terminal too small! Please resize window."
+        self.stdscr.addstr(0, 0, warning)
+        self.stdscr.refresh()
+
+    def find_start_key(self): 
+        os_name = platform.system()
+        if os_name == "Darwin": 
+            return "Return"
+        
+        return "Enter"
+
+    def draw_start_screen(self): 
+        self.stdscr.erase()
+        sh, sw = self.stdscr.getmaxyx()
+        start_key = self.find_start_key()
+
+        if not self.correct_terminal_size(sh, sw):
+            self.display_size_warning()
+            return False
+
+        off_y, _ = self.center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
+
+        title = "MINESWEEPER"
+        prompt = f"Press {start_key} to start with {self.game_manager.total_mines} mines"
+        controls = "Arrows=move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit"
+
+        # Calculate starting locations on x-axis (padding)
+        title_scr_x = max((sw - len(title)) // 2, 0)
+        prompt_scr_x = max((sw - len(prompt)) // 2, 0)
+        controls_scr_x = max((sw - len(controls)) // 2, 0)
+
+        # Display centered text
+        self.stdscr.addstr(off_y, title_scr_x, title)
+        self.stdscr.addstr(off_y + 2, prompt_scr_x, prompt)
+        self.stdscr.addstr(off_y + 4, controls_scr_x, controls)
+        self.stdscr.refresh()
+        
+        return True
+    
+    def start_game(self):
+        while True:
+            if not self.draw_start_screen():    
+                ch = self.get_input()
+                if ch == curses.KEY_RESIZE:
+                    continue    
+                continue
+            
+            ch = self.get_input()
+            if ch in (ord('\n'), ord('\r')):
+                break
+            elif ch == ord('q'):
+                self.game_manager.should_quit = True
+                return
+            elif ch == curses.KEY_RESIZE:
+                continue
+            continue
+
+        # Draw initial board
+        self.draw_board()
+
+        # Main game loop
+        while True:
+            ch = self.get_input()
+            success = self.process_input(ch)
+            self.draw_board()
+            if self.game_manager.should_quit or not success:
+                break
+                
+
+    def draw_board(self):
+        """Draw the game board on the screen"""
+        result = self.check_game_status()
+        if result == 'quit':
+            self.game_manager.should_quit = True
+            return False
+        elif result == 'play_again':
+            self.reset_game()
+            return True
+
+        self.stdscr.erase()
+        sh, sw = self.stdscr.getmaxyx()
+
+        # Print clicked cells at the top
+        clicks_str = "Clicked: " + ", ".join([f"({self.alphabet[r]},{c+1}) ADJ: {self.game_manager.grid[c][r].adjacent}" for r, c in self.clicked_cells])
+        self.stdscr.addstr(0, 0, clicks_str[:sw-1])  # top row
+
+        if not self.correct_terminal_size(sh, sw):
+            self.display_size_warning()
+            return
+
+        off_y, off_x = self.center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
+
+        # Draw column numbers
+        for c in range(COLS):
             x = off_x + c * CELL_W
+            self.stdscr.addstr(off_y - 1, x + 1, f"{c+1}")
 
-            # DRAWING BOARD EDGES
-            if (c == 0 and r == 0):
-                stdscr.addstr(y,x," ")
-                continue
-            elif (c == 0):
-                stdscr.addstr(y,x, f"{alphabet[r-1]}")
-                continue
-            elif (r == 0):
-                stdscr.addstr(y,x,f"{c}")
-                continue
+        # Draw row letters
+        for r in range(ROWS):
+            y = off_y + r * CELL_H
+            self.stdscr.addstr(y, off_x - 2, f"{self.alphabet[r]}")
 
-            # Get cell and render output depending on cell status
-            cell = grid[r % ROWS][c % COLS]
+        for r in range(ROWS):
+            for c in range(COLS):
+                # Get cell and render output depending on cell status
+                cell = self.game_manager.grid[r % ROWS][c % COLS]
 
-            if cell.flagged:
-                ch = "⚑"
+                # Calculate screen coordinates for this cell
+                y = off_y + r * CELL_H
+                x = off_x + c * CELL_W
 
-            if cell.hidden and not cell.flagged:
-                ch = "H"
-            elif cell.state == CellState.MINED:
-                ch = "0" 
-            elif cell.state == CellState.HASADJACENT:
-                ch = cell.adjacent
-            elif cell.state == CellState.MINE:
-                ch = "X"
-            elif cell.state == CellState.NONEADJACENT:
-                ch = " "
-            elif cell.state is None and not cell.flagged:
-                ch = " "
+                if cell.flagged:
+                    ch = "⚑"
+                elif cell.hidden:
+                    ch = "H"
+                elif cell.state == CellState.MINED:
+                    ch = "M" 
+                elif cell.adjacent != 0:
+                    ch = str(cell.adjacent)
+                elif cell.state == CellState.MINE:
+                    ch = "X"
+                elif cell.state == CellState.NONEADJACENT:
+                    ch = " "
+                elif cell.state is None:
+                    ch = " "
 
-            # highlight cursor
-            if cursor == (r, c):
-                stdscr.attron(curses.A_REVERSE)
-                stdscr.addstr(y, x, f"[{ch}]")
-                stdscr.attroff(curses.A_REVERSE)
-            else:
-                stdscr.addstr(y, x, f"[{ch}]")
+                # highlight cursor
+                if (self.cur_r, self.cur_c) == (r, c):
+                    self.stdscr.attron(curses.A_REVERSE)
+                    self.stdscr.addstr(y, x, f"[{ch}]")
+                    self.stdscr.attroff(curses.A_REVERSE)
+                else:
+                    self.stdscr.addstr(y, x, f"[{ch}]")
 
-    # Simple help bar
-    stdscr.addstr(sh-1, 0,
-        f"Remaining Mines: {gameManager.remaining_mine_count}"
-    )
-    stdscr.addstr(sh-2, 0,
-        f"Game State: {gameManager.game_status}"
-    )
-    stdscr.addstr(sh-3, 0,
-        "Arrows=move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit  ",
-    )
-    stdscr.clrtoeol()
-    stdscr.refresh()
+        # Simple help bar
+        self.stdscr.addstr(sh-1, 0,
+            f"Remaining Mines: {self.game_manager.remaining_mine_count}"
+        )
+        self.stdscr.addstr(sh-2, 0,
+            f"Remaining Flags: {self.game_manager.remaining_flag_count}"
+        )
 
+        self.stdscr.addstr(sh-3, 0,
+            f"Game State: {str(self.game_manager.game_status)[11:]}"
+        )
 
+        self.stdscr.addstr(sh-4, 0,
+            "Arrows=move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit  ",
+        )
+        self.stdscr.clrtoeol()
+        self.stdscr.refresh()
 
-def mouse_to_cell(stdscr, mx, my):
-    sh, sw = stdscr.getmaxyx()
-    off_y, off_x = center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
-    # inside board?
-    if my < off_y or mx < off_x:
+    def mouse_to_cell(self, mx, my):
+        """Processes user clicks on cells"""
+        sh, sw = self.stdscr.getmaxyx()
+        off_y, off_x = self.center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
+        # inside board?
+        if my < off_y or mx < off_x:
+            return None
+        if my >= off_y + ROWS * CELL_H or mx >= off_x + COLS * CELL_W:
+            return None
+        r = (my - off_y) // CELL_H
+        c = (mx - off_x) // CELL_W
+        if 0 <= r < ROWS and 0 <= c < COLS:
+            return (r, c)
         return None
-    if my >= off_y + ROWS * CELL_H or mx >= off_x + COLS * CELL_W:
+
+    def handle_left_click(self, r, c):
+        self.game_manager.handle_clicked_cell(r, c)
+
+    def handle_right_click(self, r, c):
+        if self.game_manager.is_flagged(r, c):
+            self.game_manager.remove_flag(r, c)
+        else:
+            self.game_manager.place_flag(r, c)
+
+    def get_input(self):
+        return self.stdscr.getch()
+    
+    def check_game_status(self):
+        if self.game_manager.game_status == GameStatus.WIN: 
+            return self.display_win_screen()
+        elif self.game_manager.game_status == GameStatus.LOSE:
+            return self.display_loss_screen()
         return None
-    r = (my - off_y) // CELL_H
-    c = (mx - off_x) // CELL_W
-    if 0 <= r < ROWS and 0 <= c < COLS:
-        return (r, c)
-    return None
-
-def handle_left_click(gameManager, r, c):
-    gameManager.grid[r][c].hidden = False
-    return gameManager
-
-def handle_right_click(gameManager, r, c):
-    if (gameManager.grid[r][c].flagged == True):
-        gameManager.grid[r][c].flagged =  False
-    else:
-        gameManager.grid[r][c].flagged = True
-    return gameManager
-
-
-def main(stdscr):
-    curses.curs_set(0)
-    stdscr.keypad(True)
-    curses.mousemask(curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION)
-    curses.mouseinterval(150)
-
-    # build grid
-    gameManager = GameManager(10)
-    grid = gameManager.grid
-    cur_r, cur_c = 0, 0
-
-    draw_board(stdscr, grid,gameManager, (cur_r, cur_c))
-
-    while True:
-        ch = stdscr.getch()
-
+    
+    def process_input(self, ch):
         if ch == ord('q'):
-            break
+            self.game_manager.should_quit = True
+            return False
 
         if ch == curses.KEY_RESIZE:
-            draw_board(stdscr, grid, gameManager,  (cur_r, cur_c))
-            continue
+            self.draw_board()
+            return True
 
         if ch == curses.KEY_MOUSE:
             try:
                 _, mx, my, _, bstate = curses.getmouse()
             except curses.error:
-                continue
+                return True
 
-            pos = mouse_to_cell(stdscr, mx, my)
+            pos = self.mouse_to_cell(mx, my)
             if not pos:
-                continue
+                return True
             r, c = pos
-            cur_r, cur_c = r, c
+
+            # ✅ Always update cursor highlight on hover (only if no buttons pressed)
+            if bstate == 0:  # pure motion, no buttons
+                if (r, c) != (self.cur_r, self.cur_c):
+                    self.cur_r, self.cur_c = r, c
+                    self.draw_board()
+                return True
+
             # Left-click (terminals vary: check CLICKED/PRESSED)
-            if bstate & curses.BUTTON1_CLICKED or bstate & curses.BUTTON1_PRESSED:
+            if bstate & (curses.BUTTON1_CLICKED | curses.BUTTON1_PRESSED):
+                self.handle_left_click(r, c)
+                self.clicked_cells.append((r, c))  # add clicked cell
 
-                gameManager = handle_left_click(gameManager, r, c)
+                # testing this
+                self.game_manager.handle_clicked_cell(r, c)
+
             # Right-click
-            elif bstate & curses.BUTTON3_CLICKED or bstate & curses.BUTTON3_PRESSED:
+            elif bstate & (curses.BUTTON3_CLICKED | curses.BUTTON3_PRESSED):
+                self.handle_right_click(r, c)
 
-                gameManager = handle_right_click(gameManager, r, c)
-
-            draw_board(stdscr, grid, gameManager, (cur_r, cur_c))
-            continue
+            self.draw_board()
+            return True
 
         # Keyboard navigation
-        if ch in (curses.KEY_UP, ord('k')):   cur_r = (cur_r - 1) % ROWS
-        elif ch in (curses.KEY_DOWN, ord('j')): cur_r = (cur_r + 1) % ROWS
-        elif ch in (curses.KEY_LEFT, ord('h')): cur_c = (cur_c - 1) % COLS
-        elif ch in (curses.KEY_RIGHT, ord('l')): cur_c = (cur_c + 1) % COLS
-        elif ch in (ord(' '), ord('\n')):     handle_left_click(gameManager, cur_r, cur_c)
-        elif ch in (ord('f'), ord('F')):      handle_left_click(gameManager, cur_r, cur_c)
+        if ch in (curses.KEY_UP, ord('k')):   self.cur_r = (self.cur_r - 1) % ROWS
+        elif ch in (curses.KEY_DOWN, ord('j')): self.cur_r = (self.cur_r + 1) % ROWS
+        elif ch in (curses.KEY_LEFT, ord('h')): self.cur_c = (self.cur_c - 1) % COLS
+        elif ch in (curses.KEY_RIGHT, ord('l')): self.cur_c = (self.cur_c + 1) % COLS
+        elif ch in (ord(' '), ord('\n')):     self.handle_left_click(self.cur_r, self.cur_c)
+        elif ch in (ord('f'), ord('F')):      self.handle_right_click(self.cur_r, self.cur_c)
+        return True
+    
+    def reset_game(self):
+        self.stdscr.erase()
+        self.game_manager = GameManager()
+        self.cur_r = 0
+        self.cur_c = 0
+        self.clicked_cells = []
+        self.set_num_mines()
+        self.draw_board()
 
-        draw_board(stdscr, grid, gameManager,(cur_r, cur_c))
+    def display_game_update(self, message_object):
+        main_message = message_object['main_message']
+        sub_message = message_object['sub_message']
+        control_options = message_object['control_options']
 
-if __name__ == "__main__":
-    curses.wrapper(main)
+        while True:
+            self.stdscr.erase()
+            sh, sw = self.stdscr.getmaxyx()
 
+            # Check terminal size and handle resize events
+            if not self.correct_terminal_size(sh, sw):
+                self.display_size_warning()
+                self.stdscr.refresh()
+                ch = self.stdscr.getch()
+                if ch == curses.KEY_RESIZE:
+                    continue
+                continue
+            
+            off_y, _ = self.center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
+
+            main_message_x = max((sw - len(main_message)) // 2, 0)
+            sub_message_x = max((sw - len(sub_message)) // 2, 0)
+            control_options_x = max((sw - len(control_options)) // 2, 0)
+
+            try:
+                self.stdscr.addstr(off_y, main_message_x, main_message)
+                self.stdscr.addstr(off_y + 2, sub_message_x, sub_message)
+                self.stdscr.addstr(off_y + 4, control_options_x, control_options)
+                self.stdscr.refresh()
+
+                # Get user response
+                ch = self.get_input()
+                if ch == ord('q'): 
+                    return 'quit'
+                elif ch == ord('p'):
+                    curses.noecho()
+                    return 'play_again'
+                else: 
+                    raise Exception
+
+            except Exception: 
+                curses.noecho()
+                self.stdscr.erase()
+
+                error_message = "Invalid input. Please try again"
+                error_left_padding = max((sw - len(error_message)) // 2, 0)
+
+                self.stdscr.addstr(off_y + 6, error_left_padding, error_message)
+                self.stdscr.refresh()
+                continue
+                
+    def display_win_screen(self):
+        msg_obj = { 
+            'main_message': "Congratulations -- You Win!", 
+            'sub_message': "Great job, Champion! You're a force to be reckoned with!",
+            'control_options': "p=Play Again  q=Quit: ",
+        }
+        return self.display_game_update(msg_obj)
+        
+    def display_loss_screen(self): 
+        msg_obj = { 
+            'main_message': "Sorry :( -- You Lost! ", 
+            'sub_message': "This one wasn't your game...",
+            'control_options': "p=Play Again  q=Quit: ",
+        }
+        return self.display_game_update(msg_obj)

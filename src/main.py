@@ -1,29 +1,26 @@
-from .classes import GameStatus, GameManager
+import curses
+from src.classes import GameStatus, GameManager
+from src.tui.run_tui import Frontend
 
-def main():
+def setup_curses(stdscr):
+    curses.curs_set(0)
+    stdscr.keypad(True)
+    curses.mousemask(curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION)
+    curses.mouseinterval(150)
+
+def main(stdscr):
     ### Initialize
-    # Get input, begin the game
-    total_mines = int(input("Enter the number of mines: ")) # TODO: Handle better
-    manager = GameManager(total_mines)
-    manager.game_status = GameStatus.STARTING
-    # ... do things to initialize?
-    manager.game_status = GameStatus.PLAYING
 
-    ### Main loop
-    # Get user input, process that input, output the new grid data
-    while manager.game_status == GameStatus.PLAYING:
-        # ... get input (where did the user click?)
-        # ... process (e.g. check if lost)
-        # ... output updates (ex: new grid)
-        break
+    # Show start screen and get mine count
+
+    setup_curses(stdscr)
+
+    frontend = Frontend(stdscr)
+    frontend.set_num_mines()
     
-    ### End game
-    if manager.game_status == GameStatus.WIN:
-        pass
-    else:
-        pass
+    stdscr.refresh()
+    frontend.start_game()
 
-    manager.game_status = GameStatus.END
 
 if __name__ == "__main__":
-    main()
+    curses.wrapper(main)
