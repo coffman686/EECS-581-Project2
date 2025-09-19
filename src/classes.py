@@ -262,6 +262,7 @@ class GameManager:
 
         # Check if the user has won the game.
         if self.check_win():
+            self.reveal_all()
             self.change_state(GameStatus.WIN)
             return
 
