@@ -26,6 +26,9 @@ class Cell:
         self.row = row
         self.col = col
         self.manager = gameManager
+        self.row = row
+        self.col = col
+        self.manager = gameManager
 
     def is_valid(self):
         return True if self.adjacent >= 0 else False
@@ -44,6 +47,28 @@ class Cell:
     
     def __repr__(self):
         return str(self.adjacent)
+    
+    def has_flag(self):
+        return self.flagged
+
+    def count_adjacent_cells(self):
+        left_cell = self.manager.grid[(self.row)][(self.col - 1) % self.manager.cols]
+        right_cell = self.manager.grid[(self.row)][(self.col + 1) % self.manager.cols]
+
+        top_cell = self.manager.grid[(self.row - 1) % self.manager.rows][(self.col)]
+        bottom_cell = self.manager.grid[(self.row + 1) % self.manager.rows][(self.col)]
+
+        top_left_cell = self.manager.grid[(self.row - 1) % self.manager.rows][(self.col - 1) % self.manager.cols]
+        top_right_cell = self.manager.grid[(self.row + 1) % self.manager.rows][(self.col - 1) % self.manager.cols]
+
+        bottom_right_cell = self.manager.grid[(self.row + 1) % self.manager.rows][(self.col + 1) % self.manager.cols]
+        bottom_left_cell = self.manager.grid[(self.row - 1) % self.manager.rows][(self.col + 1) % self.manager.cols]
+
+        cells = [left_cell, right_cell, top_cell, bottom_cell, top_left_cell, top_right_cell, bottom_right_cell, bottom_left_cell]
+    
+        self.adjacent = sum(1 for cell in cells if cell.state == CellState.MINE)
+        if self.adjacent > 0:
+            self.state = CellState.HASADJACENT
     
     def has_flag(self):
         return self.flagged
@@ -109,6 +134,30 @@ class GameManager:
     def set_total_mines(self, total_mines):
         self.total_mines = total_mines
         self.remaining_mine_count = total_mines
+
+    def reveal_cell(self, r, c):
+        self.grid[r][c].hidden = False
+    
+    def place_flag(self, r, c):
+        if self.remaining_flag_count <= 0 or self.grid[r][c].flagged:
+            return
+
+        self.grid[r][c].flagged = True
+        self.placed_flags += 1
+        self.remaining_flag_count -= 1
+
+    def remove_flag(self, r, c):
+        if not self.grid[r][c].flagged:
+            return
+
+        self.grid[r][c].flagged = False
+        self.placed_flags -= 1
+        self.remaining_flag_count += 1
+
+    def is_flagged(self, r, c):
+        return self.grid[r][c].flagged
+
+    # Debug function to print our cell grid
 
     def reveal_cell(self, r, c):
         self.grid[r][c].hidden = False

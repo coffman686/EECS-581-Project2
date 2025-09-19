@@ -65,7 +65,7 @@ class Frontend():
         off_x = max((scr_w - board_w) // 2, 0)
         return off_y, off_x
 
-    def correct_terminal_size(self, scr_h, sch_w, required_h = (ROWS + 1) * CELL_H + 4, required_w = (COLS + 1) * CELL_W):
+    def correct_terminal_size(self, scr_h, sch_w, required_h = (ROWS + 1) * CELL_H + 7, required_w = (COLS + 1) * CELL_W):
         if scr_h < required_h or sch_w < required_w: 
             return False
         return True
@@ -155,7 +155,7 @@ class Frontend():
         sh, sw = self.stdscr.getmaxyx()
 
         # Print clicked cells at the top
-        clicks_str = "Clicked: " + ", ".join([f"({self.alphabet[r]},{c+1}) ADJ: {self.game_manager.grid[c][r].adjacent}" for r, c in self.clicked_cells])
+        clicks_str = "Clicked: " + ", ".join([f"({self.alphabet[c]},{r+1}) ADJ: {self.game_manager.grid[c][r].adjacent}" for r, c in self.clicked_cells])
         self.stdscr.addstr(0, 0, clicks_str[:sw-1])  # top row
 
         if not self.correct_terminal_size(sh, sw):
@@ -167,12 +167,12 @@ class Frontend():
         # Draw column numbers
         for c in range(COLS):
             x = off_x + c * CELL_W
-            self.stdscr.addstr(off_y - 1, x + 1, f"{c+1}")
+            self.stdscr.addstr(off_y - 1, x + 1, f"{self.alphabet[c]}")
 
         # Draw row letters
         for r in range(ROWS):
             y = off_y + r * CELL_H
-            self.stdscr.addstr(y, off_x - 2, f"{self.alphabet[r]}")
+            self.stdscr.addstr(y, off_x - 2, f"{r+1}")
 
         for r in range(ROWS):
             for c in range(COLS):
@@ -277,24 +277,19 @@ class Frontend():
             if not pos:
                 return True
             r, c = pos
-
-            # ✅ Always update cursor highlight on hover (only if no buttons pressed)
-            if bstate == 0:  # pure motion, no buttons
-                if (r, c) != (self.cur_r, self.cur_c):
-                    self.cur_r, self.cur_c = r, c
-                    self.draw_board()
-                return True
+            self.cur_r, self.cur_c = r, c
 
             # Left-click (terminals vary: check CLICKED/PRESSED)
-            if bstate & (curses.BUTTON1_CLICKED | curses.BUTTON1_PRESSED):
+            if bstate & curses.BUTTON1_CLICKED or bstate & curses.BUTTON1_PRESSED:
                 self.handle_left_click(r, c)
                 self.clicked_cells.append((r, c))  # add clicked cell
 
                 # testing this
                 self.game_manager.handle_clicked_cell(r, c)
 
+
             # Right-click
-            elif bstate & (curses.BUTTON3_CLICKED | curses.BUTTON3_PRESSED):
+            elif bstate & curses.BUTTON3_CLICKED or bstate & curses.BUTTON3_PRESSED:
                 self.handle_right_click(r, c)
 
             self.draw_board()
