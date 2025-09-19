@@ -357,6 +357,8 @@ class Frontend():
                 elif ch == ord('p'):
                     curses.noecho()
                     return 'play_again'
+                elif ch == curses.KEY_RESIZE:
+                    continue
                 else:
                     raise Exception
 
