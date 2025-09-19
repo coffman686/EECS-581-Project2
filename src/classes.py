@@ -1,4 +1,5 @@
 from enum import Enum
+import enum
 import random
 
 class CellState(Enum):
@@ -111,8 +112,6 @@ class GameManager:
         self.total_mines = total_mines
         self.remaining_mine_count = total_mines
 
-    def reveal_cell(self, r, c):
-        self.grid[r][c].hidden = False
     
     def place_flag(self, r, c):
         if self.remaining_flag_count <= 0 or self.grid[r][c].flagged:
@@ -129,6 +128,10 @@ class GameManager:
         self.grid[r][c].flagged = False
         self.placed_flags -= 1
         self.remaining_flag_count += 1
+
+    def reveal_cell(self, r, c):
+        self.grid[r][c].hidden = False
+        self.remove_flag(r,c)
 
     def is_flagged(self, r, c):
         return self.grid[r][c].flagged
