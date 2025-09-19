@@ -65,7 +65,7 @@ class Frontend():
         off_x = max((scr_w - board_w) // 2, 0)
         return off_y, off_x
 
-    def correct_terminal_size(self, scr_h, sch_w, required_h = (ROWS + 1) * CELL_H + 4, required_w = (COLS + 1) * CELL_W):
+    def correct_terminal_size(self, scr_h, sch_w, required_h = (ROWS + 1) * CELL_H + 7, required_w = (COLS + 1) * CELL_W):
         if scr_h < required_h or sch_w < required_w: 
             return False
         return True
