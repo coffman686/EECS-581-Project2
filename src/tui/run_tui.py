@@ -292,7 +292,6 @@ class Frontend():
             elif bstate & curses.BUTTON3_CLICKED or bstate & curses.BUTTON3_PRESSED:
                 self.handle_right_click(r, c)
 
-            self.draw_board()
             return True
 
         # Keyboard navigation
