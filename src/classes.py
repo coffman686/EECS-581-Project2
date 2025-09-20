@@ -229,17 +229,22 @@ class GameManager:
         Order to check:
             Flagged? -> Has mine? -> 0 or Not-0 adjacent mines?
         """
-        if(self.is_first_click == True):
-            self.change_state(GameStatus.PLAYING)
-            self.handle_first_click(i, j)
+
+        # Retrieve the cell that was clicked from the grid.
         clicked_cell = (self.grid[i][j])
-        # Uses a "is_hidden" function which is not yet implemented in the cell class.
+
+        # Determine whether the cell clicked on is still hidden and if it is flagged or not.
         hidden_cell = clicked_cell.is_hidden()
         is_flagged = clicked_cell.has_flag()
 
         # If the cell has a flag on it, ignore.
         if is_flagged == True:
             return
+        if(self.is_first_click == True):
+            self.change_state(GameStatus.PLAYING)
+            self.handle_first_click(i, j)
+        
+        
         
         # If the cell is already revealed, ignore.
         if hidden_cell == False:
