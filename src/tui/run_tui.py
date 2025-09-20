@@ -216,13 +216,10 @@ class Frontend():
 
         # Simple help bar
         self.stdscr.addstr(sh - 1, 0,
-            f"Remaining Mines: {self.game_manager.remaining_mine_count}"
+            f"Remaining Flags/Mines: {self.game_manager.remaining_flag_count}"
         )
-        self.stdscr.addstr(sh - 2, 0,
-            f"Remaining Flags: {self.game_manager.remaining_flag_count}"
-        )
-        self.stdscr.addstr(sh - 4, 0,
-            "Arrows=move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit  ",
+        self.stdscr.addstr(sh - 3, 0,
+            "Arrows=Move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit  ",
         )
         self.stdscr.clrtoeol()
         self.stdscr.refresh()
