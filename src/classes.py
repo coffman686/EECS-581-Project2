@@ -1,4 +1,5 @@
 from enum import Enum
+import enum
 import random
 
 class CellState(Enum):
@@ -111,8 +112,6 @@ class GameManager:
         self.total_mines = total_mines
         self.remaining_mine_count = total_mines
 
-    def reveal_cell(self, r, c):
-        self.grid[r][c].hidden = False
     
     def place_flag(self, r, c):
         if self.remaining_flag_count <= 0 or self.grid[r][c].flagged:
@@ -129,6 +128,10 @@ class GameManager:
         self.grid[r][c].flagged = False
         self.placed_flags -= 1
         self.remaining_flag_count += 1
+
+    def reveal_cell(self, r, c):
+        self.grid[r][c].hidden = False
+        self.remove_flag(r,c)
 
     def is_flagged(self, r, c):
         return self.grid[r][c].flagged
@@ -226,17 +229,22 @@ class GameManager:
         Order to check:
             Flagged? -> Has mine? -> 0 or Not-0 adjacent mines?
         """
-        if(self.is_first_click == True):
-            self.change_state(GameStatus.PLAYING)
-            self.handle_first_click(i, j)
+
+        # Retrieve the cell that was clicked from the grid.
         clicked_cell = (self.grid[i][j])
-        # Uses a "is_hidden" function which is not yet implemented in the cell class.
+
+        # Determine whether the cell clicked on is still hidden and if it is flagged or not.
         hidden_cell = clicked_cell.is_hidden()
         is_flagged = clicked_cell.has_flag()
 
         # If the cell has a flag on it, ignore.
         if is_flagged == True:
             return
+        if(self.is_first_click == True):
+            self.change_state(GameStatus.PLAYING)
+            self.handle_first_click(i, j)
+        
+        
         
         # If the cell is already revealed, ignore.
         if hidden_cell == False:
