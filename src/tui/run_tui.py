@@ -15,6 +15,13 @@ class Frontend():
         self.clicked_cells = []
         self.alphabet = "abcdefghijklmnopqrstuvwxyz"
 
+    def draw_game_status(self):
+        sh, sw = self.stdscr.getmaxyx()
+
+        self.stdscr.addstr(3, sw // 2 - 10,
+            f"Game State: {str(self.game_manager.game_status)[11:]}"
+        )
+
     def set_num_mines(self):
         self.stdscr.erase()
         sh, sw = self.stdscr.getmaxyx()
@@ -65,7 +72,7 @@ class Frontend():
         off_x = max((scr_w - board_w) // 2, 0)
         return off_y, off_x
 
-    def correct_terminal_size(self, scr_h, sch_w, required_h = (ROWS + 1) * CELL_H + 7, required_w = (COLS + 1) * CELL_W):
+    def correct_terminal_size(self, scr_h, sch_w, required_h = (ROWS + 1) * CELL_H + 9, required_w = (COLS + 1) * CELL_W):
         if scr_h < required_h or sch_w < required_w: 
             return False
         return True
@@ -87,6 +94,7 @@ class Frontend():
         self.stdscr.erase()
         sh, sw = self.stdscr.getmaxyx()
         start_key = self.find_start_key()
+        self.draw_game_status()
 
         if not self.correct_terminal_size(sh, sw):
             self.display_size_warning()
@@ -147,6 +155,7 @@ class Frontend():
         # Clear the screen for fresh drawing
         self.stdscr.erase()
         sh, sw = self.stdscr.getmaxyx()
+        self.draw_game_status()
 
         # Print clicked cells at the top (currently commented out)
         # clicks_str = "Clicked: " + ", ".join(
@@ -211,9 +220,6 @@ class Frontend():
         )
         self.stdscr.addstr(sh - 2, 0,
             f"Remaining Flags: {self.game_manager.remaining_flag_count}"
-        )
-        self.stdscr.addstr(sh - 3, 0,
-            f"Game State: {str(self.game_manager.game_status)[11:]}"
         )
         self.stdscr.addstr(sh - 4, 0,
             "Arrows=move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit  ",
@@ -357,6 +363,8 @@ class Frontend():
                 elif ch == ord('p'):
                     curses.noecho()
                     return 'play_again'
+                elif ch == curses.KEY_RESIZE:
+                    continue
                 else:
                     raise Exception
 
