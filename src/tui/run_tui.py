@@ -107,7 +107,7 @@ class Frontend():
 
         # If the value entered cannot be converted, display error
         except ValueError:
-            self.stdscr.addstr(8, 0, "Error: Please enter a valid number between 1 and {}.".format(ROWS * COLS - 1))
+            self.stdscr.addstr(8, 0, "Error: Please enter a valid number between 10 and 20.")
             self.stdscr.refresh()
             curses.napms(1500)
 
