@@ -310,7 +310,7 @@ class Frontend():
         )
          # Show control instructions
         self.stdscr.addstr(sh - 3, 0,
-            "Arrows=move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit  ",
+            "Arrows=Move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit  ",
         )
         self.stdscr.clrtoeol()  # Clear the rest of the line to keep output clean
         self.stdscr.refresh()   # Refresh the screen to apply all drawing operations
