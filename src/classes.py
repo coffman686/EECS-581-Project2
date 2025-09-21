@@ -31,7 +31,6 @@ The CellStates are:
 """
 class CellState(Enum):
     NONEADJACENT = 0
-    MINE = 1
     HASADJACENT = 2
     MINED = 3
 
@@ -59,10 +58,9 @@ class GameStatus(Enum):
 class Cell:
     def __init__(self, gameManager, col, row):
         # value >= 0 --> number of mines in a 9x9 are around the cell
-        # value = -1 --> uninitialized
         self.state : None | CellState = None
         # Number of mines in adjacent cells
-        self.adjacent : int = -1
+        self.adjacent : int = 0
         # Bool whether the cell is "hidden" or not yet visible to the player
         self.hidden : bool = True
         # Bool for whether the player currently has a flag on the cell
@@ -100,29 +98,6 @@ class Cell:
     # Function returning a bool corresponding to if the cell currently has a flag on it
     def has_flag(self):
         return self.flagged
-
-    # Function that counts how many of the Cells adjacent to the current cell have mines
-    def count_adjacent_cells(self):
-        # Goes through all (up to) 8 adjcaent cells and counts how many of them have mines
-        left_cell = self.manager.grid[(self.row)][(self.col - 1) % self.manager.cols]
-        right_cell = self.manager.grid[(self.row)][(self.col + 1) % self.manager.cols]
-
-        top_cell = self.manager.grid[(self.row - 1) % self.manager.rows][(self.col)]
-        bottom_cell = self.manager.grid[(self.row + 1) % self.manager.rows][(self.col)]
-
-        top_left_cell = self.manager.grid[(self.row - 1) % self.manager.rows][(self.col - 1) % self.manager.cols]
-        top_right_cell = self.manager.grid[(self.row + 1) % self.manager.rows][(self.col - 1) % self.manager.cols]
-
-        bottom_right_cell = self.manager.grid[(self.row + 1) % self.manager.rows][(self.col + 1) % self.manager.cols]
-        bottom_left_cell = self.manager.grid[(self.row - 1) % self.manager.rows][(self.col + 1) % self.manager.cols]
-
-        cells = [left_cell, right_cell, top_cell, bottom_cell, top_left_cell, top_right_cell, bottom_right_cell, bottom_left_cell]
-    
-        self.adjacent = sum(1 for cell in cells if cell.state == CellState.MINE)
-
-        # If the Cell has at least one adjacent mine, update its CellState to it having adjacent mines
-        if self.adjacent > 0:
-            self.state = CellState.HASADJACENT
     
 # Class for a GameManager object which keeps track of what is and has happened in the game
 class GameManager:
@@ -157,13 +132,6 @@ class GameManager:
             self.seed = seed
         else:
             self.seed = random.randrange(1 << 30)
-
-        self.count_adjacent_cells()
-
-    def count_adjacent_cells(self):
-        for row in self.grid:
-            for cell in row:
-                cell.count_adjacent_cells()
 
     # Sets the number of mines equal to the number the user gives
     def set_total_mines(self, total_mines):
@@ -269,12 +237,7 @@ class GameManager:
                     if 0 <= temp_row < rows and 0 <= temp_col < cols:
                         # Also do not update adjacent count if the cell has a mine.
                         if self.grid[temp_row][temp_col].has_mine() == False:
-                            # If cell state is -1, add 2 so it becomes 1, otherwise just add 1.
-                                # Needed as "uninitialized" cells have state = -1
-                            if self.grid[temp_row][temp_col].adjacent == -1:
-                                self.grid[temp_row][temp_col].adjacent += 2
-                            else:
-                                self.grid[temp_row][temp_col].adjacent += 1
+                            self.grid[temp_row][temp_col].adjacent += 1
 
     # Function which is called when the user makes their first valid left click. This places the mines and ensures mines are only generated once
     def handle_first_click(self, i, j):
