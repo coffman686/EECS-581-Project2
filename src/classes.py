@@ -98,31 +98,6 @@ class Cell:
     # Function returning a bool corresponding to if the cell currently has a flag on it
     def has_flag(self):
         return self.flagged
-
-    # Function that counts how many of the Cells adjacent to the current cell have mines
-    """
-    def count_adjacent_cells(self):
-        # Goes through all (up to) 8 adjcaent cells and counts how many of them have mines
-        left_cell = self.manager.grid[(self.row)][(self.col - 1) % self.manager.cols]
-        right_cell = self.manager.grid[(self.row)][(self.col + 1) % self.manager.cols]
-
-        top_cell = self.manager.grid[(self.row - 1) % self.manager.rows][(self.col)]
-        bottom_cell = self.manager.grid[(self.row + 1) % self.manager.rows][(self.col)]
-
-        top_left_cell = self.manager.grid[(self.row - 1) % self.manager.rows][(self.col - 1) % self.manager.cols]
-        top_right_cell = self.manager.grid[(self.row + 1) % self.manager.rows][(self.col - 1) % self.manager.cols]
-
-        bottom_right_cell = self.manager.grid[(self.row + 1) % self.manager.rows][(self.col + 1) % self.manager.cols]
-        bottom_left_cell = self.manager.grid[(self.row - 1) % self.manager.rows][(self.col + 1) % self.manager.cols]
-
-        cells = [left_cell, right_cell, top_cell, bottom_cell, top_left_cell, top_right_cell, bottom_right_cell, bottom_left_cell]
-    
-        #self.adjacent = 0
-
-        # If the Cell has at least one adjacent mine, update its CellState to it having adjacent mines
-        if self.adjacent > 0:
-            self.state = CellState.HASADJACENT
-    """
     
 # Class for a GameManager object which keeps track of what is and has happened in the game
 class GameManager:
@@ -159,13 +134,6 @@ class GameManager:
             self.seed = random.randrange(1 << 30)
 
         #self.count_adjacent_cells()
-
-    """
-    def count_adjacent_cells(self):
-        for row in self.grid:
-            for cell in row:
-                cell.count_adjacent_cells()
-    """
 
     # Sets the number of mines equal to the number the user gives
     def set_total_mines(self, total_mines):
