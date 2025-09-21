@@ -3,7 +3,8 @@ To play Minesweeper, enter either of the *"dist-windows", "dist-linux", or "dist
 It should not need any external dependencies. However, you do need a properly setup terminal environment.
 - For mouse input, your terminal must support curses mouse functionality. Otherwise, you can just use the keyboard interface.
 - Our flag icon uses a fancy unicode code point, so if you're missing some rendering support it may appear as a missing character.
-- Your terminal needs to have a properly setup terminfo database. This should not be an issue, as most terminals should be configured correctly by default. However, if you have an improperly configured terminal, the program will crash due to being unable to initialize the user interface. This issue occurs most often in the Linux builds. If it happens, then you must rebuild your executable by following the instructions below in the "How to build" section. 
+- Your terminal needs to have a properly setup terminfo database. This should not be an issue, as most terminals should be configured correctly by default. However, if you have an improperly configured terminal, the program will crash due to being unable to initialize the user interface. This issue occurs most often in the Linux builds. If it happens, then you must rebuild your executable by following the instructions below in the "How to build" section.
+- On MacOS devices, Apple's security software may prevent you from running the executable. In this case, you may need to build the app yourself following the same instructions below.
 
 Alternatively, you can also run the following command (which may require the installation of additional dependencies):
 `python -m src.main`
