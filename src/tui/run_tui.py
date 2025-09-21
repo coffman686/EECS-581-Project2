@@ -1,5 +1,6 @@
 """
 File: run_tui.py
+Module: tui
 Function: Provides the terminal-based (curses) text user interface (TUI) for the Minesweeper game.
 Inputs:
     - User keystrokes (arrow keys = move, space = reveal, f/F = flag, Enter = next/reveal, q = quit)
@@ -13,7 +14,8 @@ Authors:
     Jack Bauer
     Delroy Wright
     Nifemi Lawal
-Date: 9/14/2025
+Renamed to run_tui.py (previously run-tui.py): 9/14/2025
+Creation date of run-tui.py: 9/3/2025
 NOTE: All code in the file was authored by 1 or more of the authors. No outside sources were used for code
 """
 
