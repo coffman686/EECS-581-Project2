@@ -308,12 +308,10 @@ class Frontend():
         self.stdscr.addstr(sh - 1, 0,
             f"Remaining Mines: {self.game_manager.remaining_mine_count}"
         )
-
         # Show remaining flags counter
         self.stdscr.addstr(sh - 2, 0,
             f"Remaining Flags: {self.game_manager.remaining_flag_count}"
         )
-
          # Show control instructions
         self.stdscr.addstr(sh - 4, 0,
             "Arrows=move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit  ",
