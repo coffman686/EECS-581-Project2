@@ -199,8 +199,6 @@ class Frontend():
                     ch = "M"
                 elif cell.adjacent != 0:
                     ch = str(cell.adjacent)
-                elif cell.state == CellState.MINE:
-                    ch = "X"
                 elif cell.state == CellState.NONEADJACENT:
                     ch = " "
                 elif cell.state is None:
