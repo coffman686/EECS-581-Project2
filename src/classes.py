@@ -133,8 +133,6 @@ class GameManager:
         else:
             self.seed = random.randrange(1 << 30)
 
-        #self.count_adjacent_cells()
-
     # Sets the number of mines equal to the number the user gives
     def set_total_mines(self, total_mines):
         self.total_mines = total_mines
