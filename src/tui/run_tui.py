@@ -304,16 +304,12 @@ class Frontend():
                 else:
                     self.stdscr.addstr(y, x, f"[{ch}]")    # draw normal cell
 
-        # Show remaining mines counter
+        # Show remaining flags/mines counter
         self.stdscr.addstr(sh - 1, 0,
-            f"Remaining Mines: {self.game_manager.remaining_mine_count}"
-        )
-        # Show remaining flags counter
-        self.stdscr.addstr(sh - 2, 0,
-            f"Remaining Flags: {self.game_manager.remaining_flag_count}"
+            f"Remaining Flags/Mines: {self.game_manager.remaining_flag_count}"
         )
          # Show control instructions
-        self.stdscr.addstr(sh - 4, 0,
+        self.stdscr.addstr(sh - 3, 0,
             "Arrows=move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit  ",
         )
         self.stdscr.clrtoeol()  # Clear the rest of the line to keep output clean
