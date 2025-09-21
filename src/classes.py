@@ -1,6 +1,6 @@
 """
 File Name: classes.py
-Function: Create the classes and functions necessary to run the backend game logic.
+Function: Create the classes and functions necessary to run the backend / game logic
 Inputs: None
 Outputs: None
 Authors:
@@ -42,15 +42,13 @@ class CellState(Enum):
 Each represents a different status the game can be in and determines what is allowed to happen in the game
     The statuses are:
         WELCOME: program starts
-        STARTING: game is beginning
-        PLAYING: user is playing game
+        PLAYING: user is playing game, after the first move is made
         LOSE: reveal a mine and loses
         WIN: reveals all non-mine squares and wins
         END: user decides to not play again
 """
 class GameStatus(Enum):
     WELCOME = 0
-    STARTING = 1
     PLAYING = 2
     LOSE = 3
     WIN = 4
@@ -95,7 +93,7 @@ class Cell:
     def __str__(self):
         return "X" if self.hidden else "M" if self.state == CellState.MINED else str(self.adjacent)
     
-    # 
+    # Overloads the text representation of a Cell
     def __repr__(self):
         return str(self.adjacent)
     
@@ -151,7 +149,7 @@ class GameManager:
         # Generate grid of Cell objects to create the game board
         self.grid = [[Cell(self, col,row) for col in range(self.cols)] for row in range(self.rows)]
 
-        # Set game state to 'Starting'
+        # Set game state to 'WELCOME'
         self.game_status = GameStatus.WELCOME
         
         # Generate Seed 
@@ -218,8 +216,6 @@ class GameManager:
         match status:
             case GameStatus.WELCOME:
                 self.game_status = GameStatus.WELCOME
-            case GameStatus.STARTING:
-                self.game_status = GameStatus.STARTING
             case GameStatus.PLAYING:
                 self.game_status = GameStatus.PLAYING
             case GameStatus.LOSE:
