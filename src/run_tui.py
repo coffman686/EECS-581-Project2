@@ -34,7 +34,7 @@ import platform
 ### CHANGED IMPORT FROM src.classes TO classes TO WORK LOCALLY ###
 from classes import GameManager, Cell, CellState, GameStatus
 
-from AI_mode import AI_mode
+from AI_mode import AI_mode, Mode
 
 # Global variables:
 ROWS, COLS = 10, 10  # 10 rows & columns to create 10x10 board
@@ -521,7 +521,10 @@ class Frontend:
     def reset_game(self):
         """Reset the game frontend & backend to its initial state"""
         self.stdscr.erase()
+        temp_mode = self.ai_mode.mode.value
         self.game_manager = GameManager()
+        self.ai_mode = AI_mode(self.game_manager)
+        self.ai_mode.mode = Mode(temp_mode)
         self.cur_r = 0
         self.cur_c = 0
         self.set_num_mines()
