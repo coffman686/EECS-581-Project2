@@ -257,10 +257,14 @@ class Frontend:
             # If Enter or Return is pressed → start game (exit loop)
 
             ## ADD OTHER NUMBERS TO START OTHER AI MODES
-            if ch in (ord('\n'), ord('\r'), ord('1')): # added 1 to start easy AI mode 
+            if ch in (ord('\n'), ord('\r'), ord('1'), ord('2'), ord('3')): # added 1 to start easy AI mode 
                 if ch == ord('1'):
                     self.ai_mode.set_mode_easy()
                     logging.debug(self.ai_mode.mode.name)
+                elif ch == ord('2'):
+                    self.ai_mode.set_mode_medium()
+                elif ch == ord('3'):
+                    self.ai_mode.set_mode_hard()
                 break
 
             # If 'q' is pressed → quit game and return immediately
@@ -286,8 +290,8 @@ class Frontend:
                 break  
             
             ## AI TURN FOR AI EASY MODE ##
-            if self.ai_mode.mode.name == "EASY" and self.ai_mode.is_turn and self.game_manager.game_status == GameStatus.PLAYING:
-                r, c = self.ai_mode.easy_ai_turn()
+            if self.ai_mode.mode.name != "NONE" and self.ai_mode.is_turn and self.game_manager.game_status == GameStatus.PLAYING:
+                r, c = self.ai_mode.ai_turn()
                 self.temp_highlight(r, c, ch)
                 self.ai_mode.change_turn()
 
@@ -445,7 +449,7 @@ class Frontend:
     def handle_left_click(self, r, c):
         """Handle a left-click on the game board"""
         if self.game_manager.handle_clicked_cell(r, c):
-            self.ai_mode.change_turn()
+            self.ai_mode.change_turn() ## Change turns is move was valid
 
     def handle_right_click(self, r, c):
         """Handle a right-click action on the game board"""
@@ -542,10 +546,10 @@ class Frontend:
     def reset_game(self):
         """Reset the game frontend & backend to its initial state"""
         self.stdscr.erase()
-        temp_mode = self.ai_mode.mode.value
+        temp_mode = self.ai_mode.mode.value # temp var to save ai mode state
         self.game_manager = GameManager()
-        self.ai_mode = AI_mode(self.game_manager)
-        self.ai_mode.mode = Mode(temp_mode)
+        self.ai_mode = AI_mode(self.game_manager) #reset ai mode
+        self.ai_mode.mode = Mode(temp_mode) # set mode back to previous mode
         self.cur_r = 0
         self.cur_c = 0
         self.set_num_mines()

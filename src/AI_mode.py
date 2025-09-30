@@ -18,9 +18,23 @@ class AI_mode():
     def set_mode_easy(self):
         self.mode = Mode.EASY
 
+    def set_mode_medium(self):
+        self.mode = Mode.MEDIUM
+
+    def set_mode_hard(self):
+        self.mode = Mode.HARD
+
     def change_turn(self):
         if self.game_manager.game_status.name == "PLAYING":
             self.is_turn = not self.is_turn
+
+    def ai_turn(self):
+        if self.mode.name == "EASY":
+            return self.easy_ai_turn()
+        elif self.mode.name == "MEDIUM":
+            return self.medium_ai_turn()
+        elif self.mode.name == "HARD":
+            return self.hard_ai_turn()
     
     def easy_ai_turn(self):
         valid_moves = []
@@ -37,6 +51,12 @@ class AI_mode():
             return (r_rand, c_rand)
 
         return (0,0)
+    
+    def medium_ai_turn(self):
+        pass
+
+    def hard_ai_turn(self):
+        pass
         
 
 
