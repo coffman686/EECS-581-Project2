@@ -17,13 +17,24 @@ Authors:
 Renamed to run_tui.py (previously run-tui.py): 9/14/2025
 Creation date of run-tui.py: 9/3/2025
 NOTE: All code in the file was authored by 1 or more of the authors. No outside sources were used for code
-"""
 
+"""
+import logging
+
+logging.basicConfig(filename="debug.log", level=logging.DEBUG, force=True)
+
+###
+### MOVED FILE INTO SRC FILE TO WORK LOCALLY
+###
 # Imports:
 import curses
 from curses.textpad import Textbox, rectangle
 import platform
-from src.classes import GameManager, Cell, CellState, GameStatus
+
+### CHANGED IMPORT FROM src.classes TO classes TO WORK LOCALLY ###
+from classes import GameManager, Cell, CellState, GameStatus
+
+from AI_mode import AI_mode
 
 # Global variables:
 ROWS, COLS = 10, 10  # 10 rows & columns to create 10x10 board
@@ -41,6 +52,7 @@ class Frontend:
         """Constructor function for the Frontend class"""
         self.stdscr = stdscr
         self.game_manager = GameManager()
+        self.ai_mode = AI_mode(self.game_manager)
         self.cur_r = 0
         self.cur_c = 0
         self.alphabet = "abcdefghijklmnopqrstuvwxyz"
@@ -202,22 +214,36 @@ class Frontend:
 
         # Text for title, prompt, and controls
         title = "MINESWEEPER"
+<<<<<<< Updated upstream:src/tui/run_tui.py
         prompt = (
             f"Press {start_key} to start with {self.game_manager.total_mines} mines"
         )
         controls = (
             "Arrows=move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit"
         )
+=======
+        prompt = f"Press {start_key} to start singleplayer mode with {self.game_manager.total_mines} mines"
+        easy_prompt = "Press 1 to start multiplayer AI mode on easy difficulty"
+        medium_prompt = "Press 2 to start multiplayer AI mode on medium difficulty"
+        hard_prompt = "Press 3 to start multiplayer AI mode on hard difficulty"
+        controls = "Arrows=move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit"
+>>>>>>> Stashed changes:src/run_tui.py
 
         # Calculate starting locations on x-axis (padding)
         title_scr_x = max((sw - len(title)) // 2, 0)
         prompt_scr_x = max((sw - len(prompt)) // 2, 0)
+        easy_prompt_src_x = max((sw - len(easy_prompt)) // 2, 0)
+        medium_prompt_src_x = max((sw - len(medium_prompt)) // 2, 0)
+        hard_prompt_src_x = max((sw - len(hard_prompt)) // 2, 0)
         controls_scr_x = max((sw - len(controls)) // 2, 0)
 
         # Display centered text
         self.stdscr.addstr(off_y, title_scr_x, title)
         self.stdscr.addstr(off_y + 2, prompt_scr_x, prompt)
-        self.stdscr.addstr(off_y + 4, controls_scr_x, controls)
+        self.stdscr.addstr(off_y + 4, easy_prompt_src_x, easy_prompt)
+        self.stdscr.addstr(off_y + 6, medium_prompt_src_x, medium_prompt)
+        self.stdscr.addstr(off_y + 8, hard_prompt_src_x, hard_prompt)
+        self.stdscr.addstr(off_y + 10, controls_scr_x, controls)
 
         # Refresh to show everything drawn
         self.stdscr.refresh()
@@ -238,7 +264,14 @@ class Frontend:
             ch = self.get_input()
 
             # If Enter or Return is pressed → start game (exit loop)
+<<<<<<< Updated upstream:src/tui/run_tui.py
             if ch in (ord("\n"), ord("\r")):
+=======
+            if ch in (ord('\n'), ord('\r'), ord('1')): # added 1 to start easy AI mode
+                if ch == ord('1'):
+                    self.ai_mode.set_mode_easy()
+                    logging.debug(self.ai_mode.mode.name)
+>>>>>>> Stashed changes:src/run_tui.py
                 break
 
             # If 'q' is pressed → quit game and return immediately
@@ -260,9 +293,39 @@ class Frontend:
         while True:
             ch = self.get_input()
             success = self.process_input(ch)
-            self.draw_board()
             if self.game_manager.should_quit or not success:
+<<<<<<< Updated upstream:src/tui/run_tui.py
                 break
+=======
+                break  
+            if self.ai_mode.mode.name == "EASY" and self.ai_mode.is_turn:
+                r, c = self.ai_mode.easy_ai_turn()
+                sh, sw = self.stdscr.getmaxyx()
+
+                off_y, off_x = self.center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
+
+                y = off_y + r * CELL_H
+                x = off_x + c * CELL_W
+
+                self.stdscr.attron(curses.A_REVERSE)   # turn on reverse video
+                self.stdscr.addstr(y, x, "[AI]")    # draw highlighted cell
+                self.stdscr.attroff(curses.A_REVERSE)  # turn highlight back off
+
+                self.stdscr.refresh()
+
+                curses.napms(500)
+
+                self.stdscr.addstr(y, x, f"[{ch}]")
+                self.stdscr.refresh()
+
+                self.ai_mode.change_turn()
+
+                
+            self.draw_board()
+
+            
+   
+>>>>>>> Stashed changes:src/run_tui.py
 
     def draw_board(self):
         """Draw the game board on the screen"""
@@ -377,7 +440,8 @@ class Frontend:
 
     def handle_left_click(self, r, c):
         """Handle a left-click on the game board"""
-        self.game_manager.handle_clicked_cell(r, c)
+        if self.game_manager.handle_clicked_cell(r, c):
+            self.ai_mode.change_turn()
 
     def handle_right_click(self, r, c):
         """Handle a right-click action on the game board"""
