@@ -15,17 +15,10 @@ Authors:
 Date: 9/3/2025
 NOTE: All code in the file was authored by 1 or more of the authors. No outside sources were used for code
 """
-<<<<<<< Updated upstream
-
-import curses  # This is our terminal interface library. It's how we setup our UI.
-from src.tui.run_tui import Frontend  # This class "runs" the actual game.
-
-=======
 import curses # This is our terminal interface library. It's how we setup our UI.
 
 ### CHANGED IMPORT FROM src.tui.run_tui TO tui.run_tui to run locally ###
 from run_tui import Frontend # This class "runs" the actual game.
->>>>>>> Stashed changes
 
 def setup_curses(stdscr):
     """Setup some basic curses settings that are required for our app to function."""
@@ -51,10 +44,5 @@ def main(stdscr):
 
 # Actually run the program.
 if __name__ == "__main__":
-<<<<<<< Updated upstream
-    # Use a curses handler function so that terminal state is restored properly on application exit.
-    curses.wrapper(main)
-=======
     # Use a curses r function so that terminal state is restored properly on application exit.
     curses.wrapper(main)
->>>>>>> Stashed changes

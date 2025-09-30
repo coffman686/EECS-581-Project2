@@ -214,20 +214,11 @@ class Frontend:
 
         # Text for title, prompt, and controls
         title = "MINESWEEPER"
-<<<<<<< Updated upstream:src/tui/run_tui.py
-        prompt = (
-            f"Press {start_key} to start with {self.game_manager.total_mines} mines"
-        )
-        controls = (
-            "Arrows=move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit"
-        )
-=======
         prompt = f"Press {start_key} to start singleplayer mode with {self.game_manager.total_mines} mines"
         easy_prompt = "Press 1 to start multiplayer AI mode on easy difficulty"
         medium_prompt = "Press 2 to start multiplayer AI mode on medium difficulty"
         hard_prompt = "Press 3 to start multiplayer AI mode on hard difficulty"
         controls = "Arrows=move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit"
->>>>>>> Stashed changes:src/run_tui.py
 
         # Calculate starting locations on x-axis (padding)
         title_scr_x = max((sw - len(title)) // 2, 0)
@@ -264,14 +255,10 @@ class Frontend:
             ch = self.get_input()
 
             # If Enter or Return is pressed → start game (exit loop)
-<<<<<<< Updated upstream:src/tui/run_tui.py
-            if ch in (ord("\n"), ord("\r")):
-=======
             if ch in (ord('\n'), ord('\r'), ord('1')): # added 1 to start easy AI mode
                 if ch == ord('1'):
                     self.ai_mode.set_mode_easy()
                     logging.debug(self.ai_mode.mode.name)
->>>>>>> Stashed changes:src/run_tui.py
                 break
 
             # If 'q' is pressed → quit game and return immediately
@@ -294,9 +281,6 @@ class Frontend:
             ch = self.get_input()
             success = self.process_input(ch)
             if self.game_manager.should_quit or not success:
-<<<<<<< Updated upstream:src/tui/run_tui.py
-                break
-=======
                 break  
             if self.ai_mode.mode.name == "EASY" and self.ai_mode.is_turn:
                 r, c = self.ai_mode.easy_ai_turn()
@@ -325,7 +309,6 @@ class Frontend:
 
             
    
->>>>>>> Stashed changes:src/run_tui.py
 
     def draw_board(self):
         """Draw the game board on the screen"""

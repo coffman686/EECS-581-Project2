@@ -293,13 +293,8 @@ class GameManager:
 
         # If the cell has a flag on it, ignore.
         if is_flagged == True:
-<<<<<<< Updated upstream
-            return
-
-=======
             return False
         
->>>>>>> Stashed changes
         # If this is the first left click that takes an action, change the game state to playing and take the actions for the first click (set mines, etc.)
         if self.is_first_click == True:
             self.change_state(GameStatus.PLAYING)
@@ -334,13 +329,8 @@ class GameManager:
             self.change_state(GameStatus.WIN)
             return True
 
-<<<<<<< Updated upstream
-        return
-
-=======
         return True
     
->>>>>>> Stashed changes
     # Checks if the player has won the game
     # If every cell without a mine has been revealed they have won, otherwise they have not.
     def check_win(self):
