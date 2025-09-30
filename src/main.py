@@ -26,6 +26,8 @@ def setup_curses(stdscr):
     curses.curs_set(0)
     # Enable keypad mode. This allows easier usage of special keys that are normally multibyte sequences.
     stdscr.keypad(True)
+    # Don't wait on input to do stuff (for timer purposes)
+    stdscr.nodelay(True)
     # NOTE: Mouse support is highly dependent on which terminal is being used.
     curses.mousemask(curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION)
     curses.mouseinterval(150)

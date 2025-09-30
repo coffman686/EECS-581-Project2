@@ -14,11 +14,11 @@ Creation Date: 9/14/2025
 
 NOTE: All code in the file was authored by 1 or more of the authors. No outside sources were used for code
 """
-
 # Import enum and random
 from enum import Enum
 import enum
 import random
+import time
 
 # Create a CellState class which is used to represent the current state of the cell
 # Determines some of the behavior that Cells can have occur
@@ -143,6 +143,10 @@ class GameManager:
 
         # Set game state to 'WELCOME'
         self.game_status = GameStatus.WELCOME
+
+        # Track time
+        self.start_time = 0
+        self.finished_time = 0
 
         # Generate Seed
         if seed is not None:
@@ -298,6 +302,7 @@ class GameManager:
         # If this is the first left click that takes an action, change the game state to playing and take the actions for the first click (set mines, etc.)
         if self.is_first_click == True:
             self.change_state(GameStatus.PLAYING)
+            self.start_time = time.time()
             self.handle_first_click(i, j)
 
         # If the cell is already revealed, ignore.
@@ -325,6 +330,7 @@ class GameManager:
         # If so, change status to win showing the whole board
         # If not, continue the game as normal
         if self.check_win():
+            self.finished_time = time.time()
             self.reveal_all()
             self.change_state(GameStatus.WIN)
             return
