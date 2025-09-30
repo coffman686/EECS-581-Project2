@@ -21,7 +21,7 @@ NOTE: All code in the file was authored by 1 or more of the authors. No outside 
 """
 import logging
 
-logging.basicConfig(filename="debug.log", level=logging.DEBUG, force=True)
+logging.basicConfig(filename="debug.log", level=logging.DEBUG, force=True) #added to debug
 
 ###
 ### MOVED FILE INTO SRC FILE TO WORK LOCALLY
@@ -34,7 +34,7 @@ import platform
 ### CHANGED IMPORT FROM src.classes TO classes TO WORK LOCALLY ###
 from classes import GameManager, Cell, CellState, GameStatus
 
-from AI_mode import AI_mode, Mode
+from AI_mode import AI_mode, Mode # import AI mode module
 
 # Global variables:
 ROWS, COLS = 10, 10  # 10 rows & columns to create 10x10 board
@@ -215,7 +215,7 @@ class Frontend:
         # Text for title, prompt, and controls
         title = "MINESWEEPER"
         prompt = f"Press {start_key} to start singleplayer mode with {self.game_manager.total_mines} mines"
-        easy_prompt = "Press 1 to start multiplayer AI mode on easy difficulty"
+        easy_prompt = "Press 1 to start multiplayer AI mode on easy difficulty" 
         medium_prompt = "Press 2 to start multiplayer AI mode on medium difficulty"
         hard_prompt = "Press 3 to start multiplayer AI mode on hard difficulty"
         controls = "Arrows=move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit"
@@ -255,7 +255,9 @@ class Frontend:
             ch = self.get_input()
 
             # If Enter or Return is pressed → start game (exit loop)
-            if ch in (ord('\n'), ord('\r'), ord('1')): # added 1 to start easy AI mode
+
+            ## ADD OTHER NUMBERS TO START OTHER AI MODES
+            if ch in (ord('\n'), ord('\r'), ord('1')): # added 1 to start easy AI mode 
                 if ch == ord('1'):
                     self.ai_mode.set_mode_easy()
                     logging.debug(self.ai_mode.mode.name)
@@ -282,33 +284,38 @@ class Frontend:
             success = self.process_input(ch)
             if self.game_manager.should_quit or not success:
                 break  
-            if self.ai_mode.mode.name == "EASY" and self.ai_mode.is_turn:
+            
+            ## AI TURN FOR AI EASY MODE ##
+            if self.ai_mode.mode.name == "EASY" and self.ai_mode.is_turn and self.game_manager.game_status == GameStatus.PLAYING:
                 r, c = self.ai_mode.easy_ai_turn()
-                sh, sw = self.stdscr.getmaxyx()
-
-                off_y, off_x = self.center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
-
-                y = off_y + r * CELL_H
-                x = off_x + c * CELL_W
-
-                self.stdscr.attron(curses.A_REVERSE)   # turn on reverse video
-                self.stdscr.addstr(y, x, "[AI]")    # draw highlighted cell
-                self.stdscr.attroff(curses.A_REVERSE)  # turn highlight back off
-
-                self.stdscr.refresh()
-
-                curses.napms(500)
-
-                self.stdscr.addstr(y, x, f"[{ch}]")
-                self.stdscr.refresh()
-
+                self.temp_highlight(r, c, ch)
                 self.ai_mode.change_turn()
 
                 
             self.draw_board()
 
-            
-   
+    # TEMP HIGHLIGHT FOR AI TURN 
+    def temp_highlight(self, r, c, ch):
+        self.draw_board()
+
+        sh, sw = self.stdscr.getmaxyx()
+
+        off_y, off_x = self.center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
+
+        y = off_y + r * CELL_H
+        x = off_x + c * CELL_W
+
+        self.stdscr.attron(curses.A_REVERSE)   # turn on reverse video
+        self.stdscr.addstr(y, x, "[AI]")    # draw highlighted cell
+        self.stdscr.attroff(curses.A_REVERSE)  # turn highlight back off
+
+        self.stdscr.refresh()
+
+        curses.napms(500)
+
+        self.stdscr.addstr(y, x, f"[{ch}]")
+        self.stdscr.refresh()
+
 
     def draw_board(self):
         """Draw the game board on the screen"""
@@ -380,6 +387,20 @@ class Frontend:
             0,
             "Arrows=Move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit  ",
         )
+
+        # SHOW TURN INSTRUCTION IF IN AI MODE
+        if not self.ai_mode.mode.name == "NONE":
+            turn = ""
+            if self.ai_mode.is_turn:
+                turn = "AI"
+            else:
+                turn = "YOU"
+            self.stdscr.addstr(
+                sh - 5,
+                0,
+                f"Turn: {turn}",
+            )
+
         self.stdscr.clrtoeol()  # Clear the rest of the line to keep output clean
         self.stdscr.refresh()  # Refresh the screen to apply all drawing operations
 
@@ -611,18 +632,33 @@ class Frontend:
 
     def display_win_screen(self):
         """Sends the win message to display_game_update"""
-        msg_obj = {
-            "main_message": "Congratulations -- You Win!",
-            "sub_message": "Great job, Champion! You're a force to be reckoned with!",
-            "control_options": "p=Play Again  q=Quit: ",
-        }
+        if self.ai_mode.is_turn: ## IF AIs TURN WHEN WON
+            msg_obj = {
+                "main_message": "AI Won, You Lost",
+                "sub_message": "Better Luck Next Time!",
+                "control_options": "p=Play Again  q=Quit: ",
+            }
+        else:
+            msg_obj = {
+                "main_message": "Congratulations -- You Win!",
+                "sub_message": "Great job, Champion! You're a force to be reckoned with!",
+                "control_options": "p=Play Again  q=Quit: ",
+            }
         return self.display_game_update(msg_obj)
 
     def display_loss_screen(self):
         """Sends the loss message to display_game_update"""
-        msg_obj = {
-            "main_message": "Sorry :( -- You Lost! ",
-            "sub_message": "This one wasn't your game...",
-            "control_options": "p=Play Again  q=Quit: ",
-        }
+        if self.ai_mode.is_turn: ## IF AI's TURN WHEN LOST
+            msg_obj = {
+                "main_message": "AI Lost, You Won! ",
+                "sub_message": "Well Played",
+                "control_options": "p=Play Again  q=Quit: ",
+            }
+        else:
+            msg_obj = {
+                "main_message": "Sorry :( -- You Lost! ",
+                "sub_message": "This one wasn't your game...",
+                "control_options": "p=Play Again  q=Quit: ",
+            }
+        
         return self.display_game_update(msg_obj)

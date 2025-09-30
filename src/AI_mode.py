@@ -19,7 +19,8 @@ class AI_mode():
         self.mode = Mode.EASY
 
     def change_turn(self):
-        self.is_turn = not self.is_turn
+        if self.game_manager.game_status.name == "PLAYING":
+            self.is_turn = not self.is_turn
     
     def easy_ai_turn(self):
         valid_moves = []
