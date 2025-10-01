@@ -282,32 +282,34 @@ class Frontend:
         # Draw initial board
         self.draw_board()
 
+   
         # Main game loop
-        while True:
-            ch = self.get_input()
-            success = self.process_input(ch)
-            if self.game_manager.should_quit or not success:
-                break  
-            
+        while not self.game_manager.should_quit:
+
             ## AI TURN FOR AI EASY MODE ##
             if self.ai_mode.mode.name != "NONE" and self.ai_mode.is_turn and self.game_manager.game_status == GameStatus.PLAYING:
-                r, c = self.ai_mode.ai_turn()
-                self.temp_highlight(r, c, ch)
+                r, c = self.cur_r, self.cur_c
+                self.cur_r, self.cur_c = self.ai_mode.ai_turn() ## temp set current row and col to AIs move location
+                self.temp_highlight(ch)
+                self.cur_r, self.cur_c = r, c # reset current r and c to players location
                 self.ai_mode.change_turn()
+            else:
+                ch = self.get_input()
+                self.process_input(ch)
 
                 
             self.draw_board()
 
     # TEMP HIGHLIGHT FOR AI TURN 
-    def temp_highlight(self, r, c, ch):
+    def temp_highlight(self, ch):
         self.draw_board()
 
         sh, sw = self.stdscr.getmaxyx()
 
         off_y, off_x = self.center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
 
-        y = off_y + r * CELL_H
-        x = off_x + c * CELL_W
+        y = off_y + self.cur_r * CELL_H
+        x = off_x + self.cur_c * CELL_W
 
         self.stdscr.attron(curses.A_REVERSE)   # turn on reverse video
         self.stdscr.addstr(y, x, "[AI]")    # draw highlighted cell
@@ -315,7 +317,7 @@ class Frontend:
 
         self.stdscr.refresh()
 
-        curses.napms(500)
+        curses.napms(750)
 
         self.stdscr.addstr(y, x, f"[{ch}]")
         self.stdscr.refresh()

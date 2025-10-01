@@ -56,7 +56,20 @@ class AI_mode():
         pass
 
     def hard_ai_turn(self):
-        pass
+        valid_moves = []
+        for r in range(10):
+            for c in range(10):
+                cell = self.game_manager.grid[r][c]
+                if cell.is_hidden() and not cell.has_mine():
+                    valid_moves.append((r, c))
+
+        if len(valid_moves) > 0:
+            index = random.randint(0, len(valid_moves) - 1)
+            r_rand, c_rand = valid_moves[index]
+            self.game_manager.handle_clicked_cell(r_rand, c_rand)
+            return (r_rand, c_rand)
+
+        return (0,0)
         
 
 
