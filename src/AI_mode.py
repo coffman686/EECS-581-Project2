@@ -8,12 +8,12 @@
 # Creation Date: 2025-09-29
 
 import random
-from decimal import Decimal
 from enum import Enum
 
 from classes import Cell
 
-BUFFER_VALUE = 2**6
+# a large value is useful since we have a delay
+BUFFER_VALUE = 1024
 
 
 class Mode(Enum):
@@ -144,17 +144,18 @@ class AI_mode:
 
         # if board is fully covered,
         # the best choice is to pick a corner
+        # (for this version of minesweeper)
         if len(covered) == self.game_manager.rows * self.game_manager.cols:
             self.game_manager.handle_clicked_cell(0, 0)
             return 0, 0
 
         # initialize probability table for mines and safe cells
-        p_mines: dict[int, Decimal] = dict()
-        p_safe: dict[int, Decimal] = dict()
+        p_mines: dict[int, float] = dict()
+        p_safe: dict[int, float] = dict()
         for cell in covered:
             index = cell.row * 10 + cell.col
-            p_mines[index] = Decimal(1.0)
-            p_safe[index] = Decimal(1.0)
+            p_mines[index] = 1.0
+            p_safe[index] = 1.0
 
         # initialize list of constraints
         constraints = self.generate_constraints(covered)
@@ -165,13 +166,13 @@ class AI_mode:
         while buffer:
             for constraint in constraints:
                 # scale prob_mines values to total to number of mines
-                p_mines_sum: Decimal = sum(p_mines[i] for i in constraint.indices)
+                p_mines_sum: float = sum(p_mines[i] for i in constraint.indices)
                 if p_mines_sum != constraint.mines:
                     for i in constraint.indices:
                         p_mines[i] *= constraint.mines / p_mines_sum
 
                 # scale prob_safe values to total to number of safe cells
-                p_safe_sum: Decimal = sum(p_safe[i] for i in constraint.indices)
+                p_safe_sum: float = sum(p_safe[i] for i in constraint.indices)
                 num_safe = len(constraint.indices) - constraint.mines
                 if p_safe_sum != num_safe:
                     for i in constraint.indices:
@@ -193,9 +194,8 @@ class AI_mode:
             if new_candidates == candidates:
                 buffer -= 1
             else:
-                # update candidates and reset buffer
+                # update candidates
                 candidates = new_candidates
-                buffer = BUFFER_VALUE
 
         # pick random candidate
         index = candidates[0]
