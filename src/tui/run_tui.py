@@ -17,6 +17,7 @@ Authors:
 Renamed to run_tui.py (previously run-tui.py): 9/14/2025
 Creation date of run-tui.py: 9/3/2025
 NOTE: All code in the file was authored by 1 or more of the authors. No outside sources were used for code
+
 """
 """
 MAINTENANCE PROLOGUE
@@ -47,10 +48,14 @@ Author: Landon Bever
 Date: 10/2/2025
 '''
 
+###
+### MOVED FILE INTO SRC FILE TO WORK LOCALLY
+###
 # Imports:
 import curses
 from curses.textpad import Textbox, rectangle
 import platform
+from AI_mode import AI_mode, Mode # import AI mode module
 from classes import GameManager, Cell, CellState, GameStatus, SoundManager
 from classes import GameManager, Cell, CellState, GameStatus
 import time
@@ -72,6 +77,7 @@ class Frontend:
         """Constructor function for the Frontend class"""
         self.stdscr = stdscr
         self.game_manager = GameManager()
+        self.ai_mode = AI_mode(self.game_manager)
         self.cur_r = 0
         self.cur_c = 0
         self.alphabet = "abcdefghijklmnopqrstuvwxyz"
@@ -253,27 +259,37 @@ class Frontend:
 
         # Text for title, prompt, and controls
         title = "MINESWEEPER"
-        prompt = (
-            f"Press {start_key} to start with {self.game_manager.total_mines} mines"
-        )
-        controls = (
-            "Arrows=move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit"
-        )
+        prompt = f"Press {start_key} to start singleplayer mode with {self.game_manager.total_mines} mines"
+        easy_prompt = "Press 1 to start multiplayer AI mode on easy difficulty (4 for automatic easy mode)" 
+        medium_prompt = "Press 2 to start multiplayer AI mode on medium difficulty (5 for automatic medium mode)"
+        hard_prompt = "Press 3 to start multiplayer AI mode on hard difficulty (6 for automatic hard mode)"
+        controls = "Arrows=move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit"
 
         # Calculate starting locations on x-axis (padding)
         title_scr_x = max((sw - len(title)) // 2, 0)
         prompt_scr_x = max((sw - len(prompt)) // 2, 0)
+        easy_prompt_src_x = max((sw - len(easy_prompt)) // 2, 0)
+        medium_prompt_src_x = max((sw - len(medium_prompt)) // 2, 0)
+        hard_prompt_src_x = max((sw - len(hard_prompt)) // 2, 0)
         controls_scr_x = max((sw - len(controls)) // 2, 0)
 
         # Display centered text
         self.stdscr.addstr(off_y, title_scr_x, title)
         self.stdscr.addstr(off_y + 2, prompt_scr_x, prompt)
-        self.stdscr.addstr(off_y + 4, controls_scr_x, controls)
+        self.stdscr.addstr(off_y + 4, easy_prompt_src_x, easy_prompt)
+        self.stdscr.addstr(off_y + 6, medium_prompt_src_x, medium_prompt)
+        self.stdscr.addstr(off_y + 8, hard_prompt_src_x, hard_prompt)
+        self.stdscr.addstr(off_y + 10, controls_scr_x, controls)
 
         # Refresh to show everything drawn
         self.stdscr.refresh()
 
         return True
+    
+    def automatic_initializer(self):
+        self.ai_mode.is_automatic_solver = True
+        self.ai_mode.is_turn = True
+        self.ai_mode.ai_turn()
 
     def start_game(self):
         """Display the start screen and wait for the player to begin or quit"""
@@ -289,7 +305,24 @@ class Frontend:
             ch = self.get_input()
 
             # If Enter or Return is pressed → start game (exit loop)
-            if ch in (ord("\n"), ord("\r")):
+
+            ## ADD OTHER NUMBERS TO START OTHER AI MODES
+            if ch in (ord('\n'), ord('\r'), ord('1'), ord('2'), ord('3'), ord('4'), ord('5'), ord('6')): # added 1 to start easy AI mode 
+                if ch == ord('1'):
+                    self.ai_mode.set_mode_easy()
+                elif ch == ord('2'):
+                    self.ai_mode.set_mode_medium()
+                elif ch == ord('3'):
+                    self.ai_mode.set_mode_hard()
+                elif ch == ord('4'): # automatic easy ai solver
+                    self.ai_mode.set_mode_easy()
+                    self.automatic_initializer()
+                elif ch == ord('5'): # automatic med ai solver
+                    self.ai_mode.set_mode_medium()
+                    self.automatic_initializer()
+                elif ch == ord('6'): # automatic hard ai solver
+                    self.ai_mode.set_mode_hard()
+                    self.automatic_initializer()
                 break
 
             # If 'q' is pressed → quit game and return immediately
@@ -307,15 +340,46 @@ class Frontend:
         # Draw initial board
         self.draw_board()
 
+   
         # Main game loop
-        while True:
-            ch = self.get_input()
-            success = self.process_input(ch)
+        while not self.game_manager.should_quit:
+
+            ## AI TURN FOR AI EASY MODE ##
+            if self.ai_mode.mode.name != "NONE" and self.ai_mode.is_turn and self.game_manager.game_status == GameStatus.PLAYING:
+                r, c = self.cur_r, self.cur_c
+                self.cur_r, self.cur_c = self.ai_mode.ai_turn() ## temp set current row and col to AIs move location
+                self.temp_highlight(ch)
+                self.cur_r, self.cur_c = r, c # reset current r and c to players location
+                self.ai_mode.change_turn()
+            else:
+                ch = self.get_input()
+                self.process_input(ch)
+
+                
             self.draw_board()
-            if self.game_manager.should_quit or not success:
-                break
-            # refreshes board every 0.1 seconds (for displaying an accurate timer)
             time.sleep(0.1)
+            
+    # TEMP HIGHLIGHT FOR AI TURN 
+    def temp_highlight(self, ch):
+        self.draw_board()
+
+        sh, sw = self.stdscr.getmaxyx()
+
+        off_y, off_x = self.center_offsets(sh, sw, ROWS, COLS, CELL_W, CELL_H)
+
+        y = off_y + self.cur_r * CELL_H
+        x = off_x + self.cur_c * CELL_W
+
+        self.stdscr.attron(curses.A_REVERSE)   # turn on reverse video
+        self.stdscr.addstr(y, x, "[AI]")    # draw highlighted cell
+        self.stdscr.attroff(curses.A_REVERSE)  # turn highlight back off
+
+        self.stdscr.refresh()
+
+        curses.napms(750)
+
+        self.stdscr.addstr(y, x, f"[{ch}]")
+        self.stdscr.refresh()
 
     def draw_board(self):
         """Draw the game board on the screen"""
@@ -388,6 +452,20 @@ class Frontend:
             0,
             "Arrows=Move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit  ",
         )
+
+        # SHOW TURN INSTRUCTION IF IN AI MODE
+        if not self.ai_mode.mode.name == "NONE":
+            turn = ""
+            if self.ai_mode.is_turn:
+                turn = "AI"
+            else:
+                turn = "YOU"
+            self.stdscr.addstr(
+                sh - 5,
+                0,
+                f"Turn: {turn}",
+            )
+
         self.stdscr.clrtoeol()  # Clear the rest of the line to keep output clean
         self.stdscr.refresh()  # Refresh the screen to apply all drawing operations
 
@@ -430,11 +508,15 @@ class Frontend:
         return None
 
     def handle_left_click(self, r, c):
-        """Handle a left-click on the game board"""
+    """Handle a left-click on the game board"""
+    move_ok = self.game_manager.handle_clicked_cell(r, c)
 
+    if move_ok:
         self.sound.play('reveal')
-        
-        self.game_manager.handle_clicked_cell(r, c)
+        # Only hand turn to AI if a move happened and game continues
+        game_over = self.game_manager.game_status in (GameStatus.WIN, GameStatus.LOSE)
+        if not game_over and self.ai_mode and self.ai_mode.mode.name != "NONE":
+            self.ai_mode.change_turn()
 
     def handle_right_click(self, r, c):
         """Handle a right-click action on the game board"""
@@ -533,11 +615,17 @@ class Frontend:
     def reset_game(self):
         """Reset the game frontend & backend to its initial state"""
         self.stdscr.erase()
+        temp_mode = self.ai_mode.mode.value # temp var to save ai mode state
+        temp_auto = self.ai_mode.is_automatic_solver # if auto mode, replay auto mode
         self.game_manager = GameManager()
+        self.ai_mode = AI_mode(self.game_manager) #reset ai mode
+        self.ai_mode.mode = Mode(temp_mode) # set mode back to previous mode
         self.cur_r = 0
         self.cur_c = 0
         self.set_num_mines()
         self.draw_board()
+        if temp_auto: # replay auto mode
+            self.automatic_initializer()
 
     def display_game_update(self, message_object):
         """
@@ -620,6 +708,18 @@ class Frontend:
 
     def display_win_screen(self):
         """Sends the win message to display_game_update"""
+        if self.ai_mode.is_turn: ## IF AIs TURN WHEN WON
+            msg_obj = {
+                "main_message": "AI Won, You Lost",
+                "sub_message": "Better Luck Next Time!",
+                "control_options": "p=Play Again  q=Quit: ",
+            }
+        else:
+            msg_obj = {
+                "main_message": "Congratulations -- You Win!",
+                "sub_message": "Great job, Champion! You're a force to be reckoned with!",
+                "control_options": "p=Play Again  q=Quit: ",
+            }
 
         self.sound.play('win')
 
@@ -650,6 +750,19 @@ class Frontend:
 
     def display_loss_screen(self):
         """Sends the loss message to display_game_update"""
+        if self.ai_mode.is_turn: ## IF AI's TURN WHEN LOST
+            msg_obj = {
+                "main_message": "AI Lost, You Won! ",
+                "sub_message": "Well Played",
+                "control_options": "p=Play Again  q=Quit: ",
+            }
+        else:
+            msg_obj = {
+                "main_message": "Sorry :( -- You Lost! ",
+                "sub_message": "This one wasn't your game...",
+                "control_options": "p=Play Again  q=Quit: ",
+            }
+        
 
         self.sound.play('lose')
 

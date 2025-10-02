@@ -58,5 +58,5 @@ def main(stdscr):
 
 # Actually run the program.
 if __name__ == "__main__":
-    # Use a curses handler function so that terminal state is restored properly on application exit.
+    # Use a curses r function so that terminal state is restored properly on application exit.
     curses.wrapper(main)
