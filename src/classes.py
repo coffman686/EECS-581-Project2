@@ -14,7 +14,17 @@ Creation Date: 9/14/2025
 
 NOTE: All code in the file was authored by 1 or more of the authors. No outside sources were used for code
 """
-# Import enum and random
+"""
+MAINTENANCE PROLOGUE:
+Additions:
+    - Initialize and store start and finish times so the high score can be calculated
+Additional Inputs: None
+Additional Outputs: None
+Authors:
+    - Sam Suggs
+File edited on: 9/29/2025
+"""
+# Import enum, random and time
 from enum import Enum
 import enum
 import random
@@ -144,7 +154,7 @@ class GameManager:
         # Set game state to 'WELCOME'
         self.game_status = GameStatus.WELCOME
 
-        # Track time
+        # Track time with start and finish time to get total elapsed time later
         self.start_time = 0
         self.finished_time = 0
 
@@ -299,7 +309,7 @@ class GameManager:
         if is_flagged == True:
             return
 
-        # If this is the first left click that takes an action, change the game state to playing and take the actions for the first click (set mines, etc.)
+        # If this is the first left click that takes an action, change the game state to playing and take the actions for the first click (set mines, start timer, etc.)
         if self.is_first_click == True:
             self.change_state(GameStatus.PLAYING)
             self.start_time = time.time()
@@ -327,7 +337,7 @@ class GameManager:
             self.rec_reveal(i, j)
 
         # After the appropreate action has been taken, check if the user has won the game.
-        # If so, change status to win showing the whole board
+        # If so, change status to win showing the whole board and stop the timer
         # If not, continue the game as normal
         if self.check_win():
             self.finished_time = time.time()

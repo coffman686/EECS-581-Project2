@@ -15,6 +15,16 @@ Authors:
 Date: 9/3/2025
 NOTE: All code in the file was authored by 1 or more of the authors. No outside sources were used for code
 """
+"""
+MAINTENANCE PROLOGUE:
+Additions:
+    - change curses setup so the program does not wait on a user input before doing anything
+Additional Inputs: None
+Additional Outputs: None
+Authors:
+    - Sam Suggs
+File edited on: 9/29/2025
+"""
 
 import curses  # This is our terminal interface library. It's how we setup our UI.
 from src.tui.run_tui import Frontend  # This class "runs" the actual game.
@@ -26,7 +36,7 @@ def setup_curses(stdscr):
     curses.curs_set(0)
     # Enable keypad mode. This allows easier usage of special keys that are normally multibyte sequences.
     stdscr.keypad(True)
-    # Don't wait on input to do stuff (for timer purposes)
+    # Don't wait on input to do other actions (this is necessary for a constantly updated timer)
     stdscr.nodelay(True)
     # NOTE: Mouse support is highly dependent on which terminal is being used.
     curses.mousemask(curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION)

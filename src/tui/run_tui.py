@@ -18,6 +18,19 @@ Renamed to run_tui.py (previously run-tui.py): 9/14/2025
 Creation date of run-tui.py: 9/3/2025
 NOTE: All code in the file was authored by 1 or more of the authors. No outside sources were used for code
 """
+"""
+MAINTENANCE PROLOGUE
+Additions: 
+    - Draw timer function that displays the timer above the board
+    - High score system that displays high score if user beats their high score for specified mine count
+Additional Inputs: None
+Additional Outputs:
+    - Timer above board
+    - High score message
+Authors:
+    - Sam Suggs
+File edited on: 9/29/2025
+"""
 
 # Imports:
 import curses
@@ -46,6 +59,7 @@ class Frontend:
         self.cur_r = 0
         self.cur_c = 0
         self.alphabet = "abcdefghijklmnopqrstuvwxyz"
+        # high score array that represents the high score for each of the 11 possible mine counts (initialized as 999999999 seconds = ~30 years)
         self.high_score = [999999999]*11
 
     def draw_game_status(self):
@@ -64,6 +78,8 @@ class Frontend:
         # Get terminal dimensions
         sh, sw = self.stdscr.getmaxyx()
 
+        # Make sure time elapsed only applies to when it's needed/relevant
+        # Display the timer as 0 when the game is still in the 'welcome' state
         if self.game_manager.game_status == GameStatus.WELCOME:
             timer = 0
         else:
@@ -281,6 +297,7 @@ class Frontend:
             self.draw_board()
             if self.game_manager.should_quit or not success:
                 break
+            # refreshes board every 0.1 seconds (for displaying an accurate timer)
             time.sleep(0.1)
 
     def draw_board(self):
@@ -581,11 +598,16 @@ class Frontend:
 
     def display_win_screen(self):
         """Sends the win message to display_game_update"""
+        # Get elapsed time (how long it took to win the game)
         elapsed_time = math.floor(self.game_manager.finished_time-self.game_manager.start_time)
+        # If it's high score for the specified mine count
         if elapsed_time < self.high_score[self.game_manager.total_mines-10]:
+            # Update high score
             self.high_score[self.game_manager.total_mines-10] = elapsed_time
+            # Congratulate user in sub-message and include overall high score
             message = f"Congrats! New high score for {self.game_manager.total_mines} mines: {elapsed_time}. High score for any mine count: {min(self.high_score)}"
         else:
+            # Otherwise, display the high score for the specific mine count and overall high score
             message = f"High score for {self.game_manager.total_mines} mines: {self.high_score[self.game_manager.total_mines-10]}. High score for any mine count: {min(self.high_score)}"
 
 
