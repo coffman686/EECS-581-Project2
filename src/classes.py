@@ -14,11 +14,21 @@ Creation Date: 9/14/2025
 
 NOTE: All code in the file was authored by 1 or more of the authors. No outside sources were used for code
 """
-
-# Import enum and random
+"""
+MAINTENANCE PROLOGUE:
+Additions:
+    - Initialize and store start and finish times so the high score can be calculated
+Additional Inputs: None
+Additional Outputs: None
+Authors:
+    - Sam Suggs
+File edited on: 9/29/2025
+"""
+# Import enum, random and time
 from enum import Enum
 import enum
 import random
+import time
 
 # Create a CellState class which is used to represent the current state of the cell
 # Determines some of the behavior that Cells can have occur
@@ -143,6 +153,10 @@ class GameManager:
 
         # Set game state to 'WELCOME'
         self.game_status = GameStatus.WELCOME
+
+        # Track time with start and finish time to get total elapsed time later
+        self.start_time = 0
+        self.finished_time = 0
 
         # Generate Seed
         if seed is not None:
@@ -295,9 +309,10 @@ class GameManager:
         if is_flagged == True:
             return
 
-        # If this is the first left click that takes an action, change the game state to playing and take the actions for the first click (set mines, etc.)
+        # If this is the first left click that takes an action, change the game state to playing and take the actions for the first click (set mines, start timer, etc.)
         if self.is_first_click == True:
             self.change_state(GameStatus.PLAYING)
+            self.start_time = time.time()
             self.handle_first_click(i, j)
 
         # If the cell is already revealed, ignore.
@@ -322,9 +337,10 @@ class GameManager:
             self.rec_reveal(i, j)
 
         # After the appropreate action has been taken, check if the user has won the game.
-        # If so, change status to win showing the whole board
+        # If so, change status to win showing the whole board and stop the timer
         # If not, continue the game as normal
         if self.check_win():
+            self.finished_time = time.time()
             self.reveal_all()
             self.change_state(GameStatus.WIN)
             return

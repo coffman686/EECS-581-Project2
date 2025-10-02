@@ -18,12 +18,27 @@ Renamed to run_tui.py (previously run-tui.py): 9/14/2025
 Creation date of run-tui.py: 9/3/2025
 NOTE: All code in the file was authored by 1 or more of the authors. No outside sources were used for code
 """
+"""
+MAINTENANCE PROLOGUE
+Additions: 
+    - Draw timer function that displays the timer above the board
+    - High score system that displays high score if user beats their high score for specified mine count
+Additional Inputs: None
+Additional Outputs:
+    - Timer above board
+    - High score message
+Authors:
+    - Sam Suggs
+File edited on: 9/29/2025
+"""
 
 # Imports:
 import curses
 from curses.textpad import Textbox, rectangle
 import platform
 from src.classes import GameManager, Cell, CellState, GameStatus
+import time
+import math
 
 # Global variables:
 ROWS, COLS = 10, 10  # 10 rows & columns to create 10x10 board
@@ -44,6 +59,8 @@ class Frontend:
         self.cur_r = 0
         self.cur_c = 0
         self.alphabet = "abcdefghijklmnopqrstuvwxyz"
+        # high score array that represents the high score for each of the 11 possible mine counts (initialized as 999999999 seconds = ~30 years)
+        self.high_score = [999999999]*11
 
     def draw_game_status(self):
         """Display the current game status"""
@@ -54,6 +71,23 @@ class Frontend:
         # Display the game status above game board
         self.stdscr.addstr(
             3, sw // 2 - 10, f"Game State: {str(self.game_manager.game_status)[11:]}"
+        )
+
+    def draw_timer(self):
+        """Display the total time elapsed"""
+        # Get terminal dimensions
+        sh, sw = self.stdscr.getmaxyx()
+
+        # Make sure time elapsed only applies to when it's needed/relevant
+        # Display the timer as 0 when the game is still in the 'welcome' state
+        if self.game_manager.game_status == GameStatus.WELCOME:
+            timer = 0
+        else:
+            timer = math.floor(time.time()-self.game_manager.start_time)
+
+        # Display the time elapsed above game board
+        self.stdscr.addstr(
+            4, sw // 2 - 10, f"Time elapsed: {timer}"
         )
 
     def set_num_mines(self):
@@ -142,7 +176,7 @@ class Frontend:
         self,
         scr_h,
         sch_w,
-        required_h=(ROWS + 1) * CELL_H + 9,
+        required_h=(ROWS + 1) * CELL_H + 11,
         required_w=(COLS + 1) * CELL_W,
     ):
         """Return whether the terminal window is large enough to display the game"""
@@ -263,6 +297,8 @@ class Frontend:
             self.draw_board()
             if self.game_manager.should_quit or not success:
                 break
+            # refreshes board every 0.1 seconds (for displaying an accurate timer)
+            time.sleep(0.1)
 
     def draw_board(self):
         """Draw the game board on the screen"""
@@ -271,6 +307,7 @@ class Frontend:
         self.stdscr.erase()
         sh, sw = self.stdscr.getmaxyx()
         self.draw_game_status()
+        self.draw_timer()
 
         # Handle incorrect terminal size
         if not self.correct_terminal_size(sh, sw):
@@ -561,9 +598,22 @@ class Frontend:
 
     def display_win_screen(self):
         """Sends the win message to display_game_update"""
+        # Get elapsed time (how long it took to win the game)
+        elapsed_time = math.floor(self.game_manager.finished_time-self.game_manager.start_time)
+        # If it's high score for the specified mine count
+        if elapsed_time < self.high_score[self.game_manager.total_mines-10]:
+            # Update high score
+            self.high_score[self.game_manager.total_mines-10] = elapsed_time
+            # Congratulate user in sub-message and include overall high score
+            message = f"Congrats! New high score for {self.game_manager.total_mines} mines: {elapsed_time}. High score for any mine count: {min(self.high_score)}"
+        else:
+            # Otherwise, display the high score for the specific mine count and overall high score
+            message = f"High score for {self.game_manager.total_mines} mines: {self.high_score[self.game_manager.total_mines-10]}. High score for any mine count: {min(self.high_score)}"
+
+
         msg_obj = {
             "main_message": "Congratulations -- You Win!",
-            "sub_message": "Great job, Champion! You're a force to be reckoned with!",
+            "sub_message": message,
             "control_options": "p=Play Again  q=Quit: ",
         }
         return self.display_game_update(msg_obj)
