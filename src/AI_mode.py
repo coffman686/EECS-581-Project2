@@ -17,6 +17,7 @@ class AI_mode():
         self.mode = Mode(0)
         self.is_turn = False
         self.game_manager = game_manager
+        self.is_automatic_solver = False
 
     def set_mode_easy(self):
         self.mode = Mode.EASY
@@ -28,8 +29,11 @@ class AI_mode():
         self.mode = Mode.HARD
 
     def change_turn(self):
-        if self.game_manager.game_status.name == "PLAYING":
-            self.is_turn = not self.is_turn
+        if self.is_automatic_solver:
+           return
+        else:
+            if self.game_manager.game_status.name == "PLAYING":
+                self.is_turn = not self.is_turn
 
     def ai_turn(self):
         if self.mode.name == "EASY":

@@ -215,9 +215,9 @@ class Frontend:
         # Text for title, prompt, and controls
         title = "MINESWEEPER"
         prompt = f"Press {start_key} to start singleplayer mode with {self.game_manager.total_mines} mines"
-        easy_prompt = "Press 1 to start multiplayer AI mode on easy difficulty" 
-        medium_prompt = "Press 2 to start multiplayer AI mode on medium difficulty"
-        hard_prompt = "Press 3 to start multiplayer AI mode on hard difficulty"
+        easy_prompt = "Press 1 to start multiplayer AI mode on easy difficulty (4 for automatic easy mode)" 
+        medium_prompt = "Press 2 to start multiplayer AI mode on medium difficulty (5 for automatic medium mode)"
+        hard_prompt = "Press 3 to start multiplayer AI mode on hard difficulty (6 for automatic hard mode)"
         controls = "Arrows=move  Space=Reveal  f=Flag  Mouse: Left=Reveal Right=Flag  q=Quit"
 
         # Calculate starting locations on x-axis (padding)
@@ -240,6 +240,11 @@ class Frontend:
         self.stdscr.refresh()
 
         return True
+    
+    def automatic_initializer(self):
+        self.ai_mode.is_automatic_solver = True
+        self.ai_mode.is_turn = True
+        self.ai_mode.ai_turn()
 
     def start_game(self):
         """Display the start screen and wait for the player to begin or quit"""
@@ -257,14 +262,22 @@ class Frontend:
             # If Enter or Return is pressed → start game (exit loop)
 
             ## ADD OTHER NUMBERS TO START OTHER AI MODES
-            if ch in (ord('\n'), ord('\r'), ord('1'), ord('2'), ord('3')): # added 1 to start easy AI mode 
+            if ch in (ord('\n'), ord('\r'), ord('1'), ord('2'), ord('3'), ord('4'), ord('5'), ord('6')): # added 1 to start easy AI mode 
                 if ch == ord('1'):
                     self.ai_mode.set_mode_easy()
-                    logging.debug(self.ai_mode.mode.name)
                 elif ch == ord('2'):
                     self.ai_mode.set_mode_medium()
                 elif ch == ord('3'):
                     self.ai_mode.set_mode_hard()
+                elif ch == ord('4'): # automatic easy ai solver
+                    self.ai_mode.set_mode_easy()
+                    self.automatic_initializer()
+                elif ch == ord('5'): # automatic med ai solver
+                    self.ai_mode.set_mode_medium()
+                    self.automatic_initializer()
+                elif ch == ord('6'): # automatic hard ai solver
+                    self.ai_mode.set_mode_hard()
+                    self.automatic_initializer()
                 break
 
             # If 'q' is pressed → quit game and return immediately
@@ -549,6 +562,7 @@ class Frontend:
         """Reset the game frontend & backend to its initial state"""
         self.stdscr.erase()
         temp_mode = self.ai_mode.mode.value # temp var to save ai mode state
+        temp_auto = self.ai_mode.is_automatic_solver # if auto mode, replay auto mode
         self.game_manager = GameManager()
         self.ai_mode = AI_mode(self.game_manager) #reset ai mode
         self.ai_mode.mode = Mode(temp_mode) # set mode back to previous mode
@@ -556,6 +570,8 @@ class Frontend:
         self.cur_c = 0
         self.set_num_mines()
         self.draw_board()
+        if temp_auto: # replay auto mode
+            self.automatic_initializer()
 
     def display_game_update(self, message_object):
         """
