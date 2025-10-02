@@ -23,7 +23,7 @@ NOTE: All code in the file was authored by 1 or more of the authors. No outside 
 import curses
 from curses.textpad import Textbox, rectangle
 import platform
-from src.classes import GameManager, Cell, CellState, GameStatus
+from classes import GameManager, Cell, CellState, GameStatus, SoundManager
 
 # Global variables:
 ROWS, COLS = 10, 10     # 10 rows & columns to create 10x10 board
@@ -42,6 +42,7 @@ class Frontend():
         self.cur_r = 0
         self.cur_c = 0
         self.alphabet = "abcdefghijklmnopqrstuvwxyz"
+        self.sound = SoundManager()
 
     def draw_game_status(self):
         """Display the current game status"""
@@ -357,10 +358,15 @@ class Frontend():
 
     def handle_left_click(self, r, c):
         """Handle a left-click on the game board"""
+
+        self.sound.play('reveal')
+        
         self.game_manager.handle_clicked_cell(r, c)
 
     def handle_right_click(self, r, c):
         """Handle a right-click action on the game board"""
+
+        self.sound.play('flag')
 
         # If the cell has a flag, right click can only remove it
         if self.game_manager.is_flagged(r, c):
@@ -532,6 +538,9 @@ class Frontend():
                 
     def display_win_screen(self):
         """Sends the win message to display_game_update"""
+
+        self.sound.play('win')
+
         msg_obj = { 
             'main_message': "Congratulations -- You Win!", 
             'sub_message': "Great job, Champion! You're a force to be reckoned with!",
@@ -541,6 +550,9 @@ class Frontend():
         
     def display_loss_screen(self):
         """Sends the loss message to display_game_update"""
+
+        self.sound.play('lose')
+
         msg_obj = { 
             'main_message': "Sorry :( -- You Lost! ", 
             'sub_message': "This one wasn't your game...",

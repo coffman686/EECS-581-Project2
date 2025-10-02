@@ -20,6 +20,9 @@ from enum import Enum
 import enum
 import random
 
+import simpleaudio as sa
+import os
+
 # Create a CellState class which is used to represent the current state of the cell
     # Determines some of the behavior that Cells can have occur
 
@@ -368,3 +371,27 @@ class GameManager:
             for col in range(self.cols):
                 self.reveal_cell(row, col)
         return
+    
+class SoundManager:
+    """A sound manager that plays sounds for game events"""
+    def __init__(self):
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+        self.dir = os.path.join(base_dir, "assets", "sounds") #navigate to sounds directory
+
+        files = {
+            "reveal": "reveal.wav", # reveal cell
+            "flag":   "flag.wav", # place/remove flag
+            "win":    "win.wav", # win game
+            "lose":   "lose.wav", # lose game
+        }
+
+        # preload wave objects
+        self.waves = {}
+        for i, name in files.items():
+            path = os.path.join(self.dir, name)
+            self.waves[i] = sa.WaveObject.from_wave_file(path)
+
+    def play(self, key):
+        """Play the .wav file"""
+        wav = self.waves.get(key)
+        wav.play()

@@ -1,0 +1,10 @@
+Needs to import os and simpleaudio
+simpleaudio can be installed with pip install simpleaudio
+edited run_tui.py to play:
+- flag.wav when a flag is placed or removed
+- lose.wav when the player loses 
+- reveal.wav when the player uncovers any cell 
+- win.wav when the player wins 
+
+edited classes.py to hold the SoundManager class.
+SoundManager holds the directory for the sounds and plays the sound.
