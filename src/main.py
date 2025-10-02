@@ -29,7 +29,7 @@ File edited on: 9/29/2025
 """
 
 import curses  # This is our terminal interface library. It's how we setup our UI.
-from src.tui.run_tui import Frontend  # This class "runs" the actual game.
+from tui.run_tui import Frontend  # This class "runs" the actual game.
 
 
 def setup_curses(stdscr):

@@ -52,7 +52,7 @@ import curses
 from curses.textpad import Textbox, rectangle
 import platform
 from classes import GameManager, Cell, CellState, GameStatus, SoundManager
-from src.classes import GameManager, Cell, CellState, GameStatus
+from classes import GameManager, Cell, CellState, GameStatus
 import time
 import math
 
@@ -627,6 +627,7 @@ class Frontend:
             'main_message': "Congratulations -- You Win!", 
             'sub_message': "Great job, Champion! You're a force to be reckoned with!",
             'control_options': "p=Play Again  q=Quit: ",
+        }
         # Get elapsed time (how long it took to win the game)
         elapsed_time = math.floor(self.game_manager.finished_time-self.game_manager.start_time)
         # If it's high score for the specified mine count
@@ -656,6 +657,7 @@ class Frontend:
             'main_message': "Sorry :( -- You Lost! ", 
             'sub_message': "This one wasn't your game...",
             'control_options': "p=Play Again  q=Quit: ",
+        }
         msg_obj = {
             "main_message": "Sorry :( -- You Lost! ",
             "sub_message": "This one wasn't your game...",
