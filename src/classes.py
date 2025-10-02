@@ -15,6 +15,21 @@ Creation Date: 9/14/2025
 NOTE: All code in the file was authored by 1 or more of the authors. No outside sources were used for code
 """
 
+'''
+Prologue comments for P2
+
+File name: classes.py
+Function: Create the class necessary for playing sound effects
+Class: SoundManager
+Module: src
+Description: This class manages the sound effects for the game
+Inputs: None
+Outputs: None
+External Sources: simpleaudio - code written by Landon Bever
+Author: Landon Bever
+Date: 10/2/2025
+'''
+
 # Import enum and random
 from enum import Enum
 import enum

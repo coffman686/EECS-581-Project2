@@ -19,6 +19,21 @@ Creation date of run-tui.py: 9/3/2025
 NOTE: All code in the file was authored by 1 or more of the authors. No outside sources were used for code
 """
 
+'''
+Prologue comments for P2
+
+File name: run_tui.py
+Function: Add sound effects to game events
+Class: SoundManager
+Module: tui
+Description: This class manages the sound effects for the game
+Inputs: None
+Outputs: None
+External Sources: simpleaudio - code written by Landon Bever
+Author: Landon Bever
+Date: 10/2/2025
+'''
+
 # Imports:
 import curses
 from curses.textpad import Textbox, rectangle
