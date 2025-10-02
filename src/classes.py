@@ -15,10 +15,40 @@ Creation Date: 9/14/2025
 NOTE: All code in the file was authored by 1 or more of the authors. No outside sources were used for code
 """
 
+'''
+Prologue comments for P2
+
+File name: classes.py
+Function: Create the class necessary for playing sound effects
+Class: SoundManager
+Module: src
+Description: This class manages the sound effects for the game
+Inputs: None
+Outputs: None
+External Sources: simpleaudio - code written by Landon Bever
+Author: Landon Bever
+Date: 10/2/2025
+'''
+
 # Import enum and random
+"""
+MAINTENANCE PROLOGUE:
+Additions:
+    - Initialize and store start and finish times so the high score can be calculated
+Additional Inputs: None
+Additional Outputs: None
+Authors:
+    - Sam Suggs
+File edited on: 9/29/2025
+"""
+# Import enum, random and time
 from enum import Enum
 import enum
 import random
+import time
+
+import simpleaudio as sa
+import os
 
 # Create a CellState class which is used to represent the current state of the cell
 # Determines some of the behavior that Cells can have occur
@@ -143,6 +173,10 @@ class GameManager:
 
         # Set game state to 'WELCOME'
         self.game_status = GameStatus.WELCOME
+
+        # Track time with start and finish time to get total elapsed time later
+        self.start_time = 0
+        self.finished_time = 0
 
         # Generate Seed
         if seed is not None:
@@ -296,8 +330,12 @@ class GameManager:
             return False
         
         # If this is the first left click that takes an action, change the game state to playing and take the actions for the first click (set mines, etc.)
+            return
+
+        # If this is the first left click that takes an action, change the game state to playing and take the actions for the first click (set mines, start timer, etc.)
         if self.is_first_click == True:
             self.change_state(GameStatus.PLAYING)
+            self.start_time = time.time()
             self.handle_first_click(i, j)
 
         # If the cell is already revealed, ignore.
@@ -322,9 +360,10 @@ class GameManager:
             self.rec_reveal(i, j)
 
         # After the appropreate action has been taken, check if the user has won the game.
-        # If so, change status to win showing the whole board
+        # If so, change status to win showing the whole board and stop the timer
         # If not, continue the game as normal
         if self.check_win():
+            self.finished_time = time.time()
             self.reveal_all()
             self.change_state(GameStatus.WIN)
             return True
@@ -387,3 +426,27 @@ class GameManager:
             for col in range(self.cols):
                 self.reveal_cell(row, col)
         return
+    
+class SoundManager:
+    """A sound manager that plays sounds for game events"""
+    def __init__(self):
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+        self.dir = os.path.join(base_dir, "assets", "sounds") #navigate to sounds directory
+
+        files = {
+            "reveal": "reveal.wav", # reveal cell
+            "flag":   "flag.wav", # place/remove flag
+            "win":    "win.wav", # win game
+            "lose":   "lose.wav", # lose game
+        }
+
+        # preload wave objects
+        self.waves = {}
+        for i, name in files.items():
+            path = os.path.join(self.dir, name)
+            self.waves[i] = sa.WaveObject.from_wave_file(path)
+
+    def play(self, key):
+        """Play the .wav file"""
+        wav = self.waves.get(key)
+        wav.play()
