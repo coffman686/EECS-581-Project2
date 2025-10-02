@@ -31,15 +31,27 @@ Date: 10/2/2025
 '''
 
 # Import enum and random
+"""
+MAINTENANCE PROLOGUE:
+Additions:
+    - Initialize and store start and finish times so the high score can be calculated
+Additional Inputs: None
+Additional Outputs: None
+Authors:
+    - Sam Suggs
+File edited on: 9/29/2025
+"""
+# Import enum, random and time
 from enum import Enum
 import enum
 import random
+import time
 
 import simpleaudio as sa
 import os
 
 # Create a CellState class which is used to represent the current state of the cell
-    # Determines some of the behavior that Cells can have occur
+# Determines some of the behavior that Cells can have occur
 
 """
 The CellStates are:
@@ -48,13 +60,16 @@ The CellStates are:
     HASADJACENT: The Cell as at least 1 adjacent Cells with a mine
     MINED: The Cell has a mine placed on it
 """
+
+
 class CellState(Enum):
     NONEADJACENT = 0
     HASADJACENT = 2
     MINED = 3
 
+
 # Create a GameStatus class which keeps track of what the current status of the game is
-    # This is used to take certain actions, such as knowing to reveal the board when the player loses
+# This is used to take certain actions, such as knowing to reveal the board when the player loses
 
 """
 Each represents a different status the game can be in and determines what is allowed to happen in the game
@@ -65,6 +80,8 @@ Each represents a different status the game can be in and determines what is all
         WIN: reveals all non-mine squares and wins
         END: user decides to not play again
 """
+
+
 class GameStatus(Enum):
     WELCOME = 0
     PLAYING = 2
@@ -72,18 +89,19 @@ class GameStatus(Enum):
     WIN = 4
     END = 5
 
+
 # Creates a Cell class. Each individual square on the board is a Cell.
-    # Each Cell object has its own attributes which keep track of various characteristics about the cell.
+# Each Cell object has its own attributes which keep track of various characteristics about the cell.
 class Cell:
     def __init__(self, gameManager, col, row):
         # value >= 0 --> number of mines in a 9x9 are around the cell
-        self.state : None | CellState = None
+        self.state: None | CellState = None
         # Number of mines in adjacent cells
-        self.adjacent : int = 0
+        self.adjacent: int = 0
         # Bool whether the cell is "hidden" or not yet visible to the player
-        self.hidden : bool = True
+        self.hidden: bool = True
         # Bool for whether the player currently has a flag on the cell
-        self.flagged : bool = False
+        self.flagged: bool = False
         # The row and column indices of the Cell. Its position on the board
         self.row = row
         self.col = col
@@ -93,31 +111,38 @@ class Cell:
     # Function returning whether the Cell has been "initialized" when the game begins
     def is_valid(self):
         return True if self.adjacent >= 0 else False
-    
+
     # Function returning a bool corresponding to whether or not the Cell contains a mine
     def has_mine(self):
         return self.state == CellState.MINED
-    
+
     # Function returning a bool if the Cell is still hidden from the user
     def is_hidden(self):
         return self.hidden
-    
+
     # Function returning the number of mines in squares adjacent to the current cell
     def get_value(self):
         return self.adjacent
-    
+
     # Overloads how a Cell is represented as a string
     def __str__(self):
-        return "X" if self.hidden else "M" if self.state == CellState.MINED else str(self.adjacent)
-    
+        return (
+            "X"
+            if self.hidden
+            else "M"
+            if self.state == CellState.MINED
+            else str(self.adjacent)
+        )
+
     # Overloads the text representation of a Cell
     def __repr__(self):
         return str(self.adjacent)
-    
+
     # Function returning a bool corresponding to if the cell currently has a flag on it
     def has_flag(self):
         return self.flagged
-    
+
+
 # Class for a GameManager object which keeps track of what is and has happened in the game
 class GameManager:
     def __init__(self, seed=None):
@@ -139,14 +164,21 @@ class GameManager:
         self.placed_flags = 0
         self.total_flags = 0
         self.remaining_flag_count = 0
-        
+
         # Generate grid of Cell objects to create the game board
-        self.grid = [[Cell(self, col,row) for col in range(self.cols)] for row in range(self.rows)]
+        self.grid = [
+            [Cell(self, col, row) for col in range(self.cols)]
+            for row in range(self.rows)
+        ]
 
         # Set game state to 'WELCOME'
         self.game_status = GameStatus.WELCOME
-        
-        # Generate Seed 
+
+        # Track time with start and finish time to get total elapsed time later
+        self.start_time = 0
+        self.finished_time = 0
+
+        # Generate Seed
         if seed is not None:
             self.seed = seed
         else:
@@ -160,7 +192,7 @@ class GameManager:
     # Function which places a flag on a square that has yet to be revealed
     def place_flag(self, r, c):
         # Checks if the user still has flags to place and if the Cell is already flagged
-            # If either is true, do not place a flag
+        # If either is true, do not place a flag
         if self.remaining_flag_count <= 0 or self.grid[r][c].flagged:
             return
 
@@ -183,7 +215,7 @@ class GameManager:
     def reveal_cell(self, r, c):
         # Sets the Cells status to no longer be hidden and call the remove flag function
         self.grid[r][c].hidden = False
-        self.remove_flag(r,c)
+        self.remove_flag(r, c)
 
     # Function which returns a bool for if a Cell at a certain position if flagged or not
     def is_flagged(self, r, c):
@@ -214,7 +246,7 @@ class GameManager:
             case _:
                 pass
 
-    # Function which randomly generates the mine locations and places them on the grid        
+    # Function which randomly generates the mine locations and places them on the grid
     def generate_mines(self, i, j):
         """Randomly places mines on the grid"""
 
@@ -228,7 +260,10 @@ class GameManager:
         # Select unique mine positions across the grid
         mine_positions = seed_num.sample(range(rows * cols), self.total_mines)
 
-        while(sum(1 for pos in mine_positions if pos // cols == i and pos % cols == j) >= 1): # ensure we don't create mines on first click position
+        while (
+            sum(1 for pos in mine_positions if pos // cols == i and pos % cols == j)
+            >= 1
+        ):  # ensure we don't create mines on first click position
             mine_positions = seed_num.sample(range(rows * cols), self.total_mines)
 
         # Goes through all the positions where mines should be places and places a mine
@@ -248,7 +283,7 @@ class GameManager:
                         continue
 
                     # Uses a temporary row and column index to check if the cells neighbor is on the board
-                        # Ex: A cell in row 0 might have a "neighbor" in row -1 which is not actually a square and must be prevented from being indexed
+                    # Ex: A cell in row 0 might have a "neighbor" in row -1 which is not actually a square and must be prevented from being indexed
                     temp_row = row + adj_row
                     temp_col = col + adj_col
 
@@ -260,8 +295,8 @@ class GameManager:
 
     # Function which is called when the user makes their first valid left click. This places the mines and ensures mines are only generated once
     def handle_first_click(self, i, j):
-            self.is_first_click = False
-            self.generate_mines(i, j)
+        self.is_first_click = False
+        self.generate_mines(i, j)
 
     # Main function which handles the logic of when a user left clicks on a cell and tries to reveal it
     def handle_clicked_cell(self, i, j):
@@ -284,7 +319,7 @@ class GameManager:
         """
 
         # Retrieve the cell that was clicked from the grid.
-        clicked_cell = (self.grid[i][j])
+        clicked_cell = self.grid[i][j]
 
         # Determine whether the cell clicked on is still hidden and if it is flagged or not.
         hidden_cell = clicked_cell.is_hidden()
@@ -293,12 +328,13 @@ class GameManager:
         # If the cell has a flag on it, ignore.
         if is_flagged == True:
             return
-        
-        # If this is the first left click that takes an action, change the game state to playing and take the actions for the first click (set mines, etc.)
-        if(self.is_first_click == True):
+
+        # If this is the first left click that takes an action, change the game state to playing and take the actions for the first click (set mines, start timer, etc.)
+        if self.is_first_click == True:
             self.change_state(GameStatus.PLAYING)
+            self.start_time = time.time()
             self.handle_first_click(i, j)
-        
+
         # If the cell is already revealed, ignore.
         if hidden_cell == False:
             return
@@ -321,17 +357,18 @@ class GameManager:
             self.rec_reveal(i, j)
 
         # After the appropreate action has been taken, check if the user has won the game.
-            # If so, change status to win showing the whole board
-            # If not, continue the game as normal
+        # If so, change status to win showing the whole board and stop the timer
+        # If not, continue the game as normal
         if self.check_win():
+            self.finished_time = time.time()
             self.reveal_all()
             self.change_state(GameStatus.WIN)
             return
 
         return
-    
+
     # Checks if the player has won the game
-        # If every cell without a mine has been revealed they have won, otherwise they have not.
+    # If every cell without a mine has been revealed they have won, otherwise they have not.
     def check_win(self):
         for row in self.grid:
             for cell in row:
@@ -341,15 +378,15 @@ class GameManager:
 
     def rec_reveal(self, i, j):
         # Recursively reveal all the cells around the current cell that have 0 adjacent mines in the 8 nearby directions
-            # Must ensure that no out of bounds errors occur
-        
+        # Must ensure that no out of bounds errors occur
+
         # Get the cell object from coordinate i,j
         current_cell = self.grid[i][j]
 
         # If the cell has already been revealed, nothing needs to be done.
         if not current_cell.hidden or current_cell.has_flag():
             return
-        
+
         # Since current cell has not been revealed, reveal it.
         self.reveal_cell(i, j)
 
@@ -358,7 +395,7 @@ class GameManager:
             return
 
         # This uses similar behavior to updating the mines counts, but instead of adding counts, calls rec_reveal on the adjacent squares, if their adjacent bomb count is also 0
-        
+
         # Get the row value, col value, # of rows, # of cols
         row = i
         col = j
@@ -366,17 +403,17 @@ class GameManager:
         cols = len(self.grid[0])
 
         # Check the adjacent 8 cells to the current cell to see if they are in bounds, are not revealed
-            # If so, reveals it
-                # Then if that cell also has 0 adjacent mines, recursively reveal it and its neighbors
+        # If so, reveals it
+        # Then if that cell also has 0 adjacent mines, recursively reveal it and its neighbors
 
         for adj_row in [-1, 0, 1]:
             for adj_col in [-1, 0, 1]:
-            # Check to make sure not adjusting the count of where the mine is
-                if (adj_row != 0 or adj_col != 0):
+                # Check to make sure not adjusting the count of where the mine is
+                if adj_row != 0 or adj_col != 0:
                     temp_row = row + adj_row
                     temp_col = col + adj_col
                     # Check if temp_row and temp_col are in bounds. If so, recursively reveal
-                    if ((0 <= temp_row < rows) and (0 <= temp_col < cols)):
+                    if (0 <= temp_row < rows) and (0 <= temp_col < cols):
                         self.rec_reveal(temp_row, temp_col)
         return
 
