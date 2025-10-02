@@ -18,7 +18,7 @@ NOTE: All code in the file was authored by 1 or more of the authors. No outside 
 import curses # This is our terminal interface library. It's how we setup our UI.
 
 ### CHANGED IMPORT FROM src.tui.run_tui TO tui.run_tui to run locally ###
-from run_tui import Frontend # This class "runs" the actual game.
+from tui.run_tui import Frontend # This class "runs" the actual game.
 
 def setup_curses(stdscr):
     """Setup some basic curses settings that are required for our app to function."""

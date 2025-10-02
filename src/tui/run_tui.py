@@ -19,9 +19,6 @@ Creation date of run-tui.py: 9/3/2025
 NOTE: All code in the file was authored by 1 or more of the authors. No outside sources were used for code
 
 """
-import logging
-
-logging.basicConfig(filename="debug.log", level=logging.DEBUG, force=True) #added to debug
 
 ###
 ### MOVED FILE INTO SRC FILE TO WORK LOCALLY
