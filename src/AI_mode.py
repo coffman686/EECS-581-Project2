@@ -1,9 +1,20 @@
-from classes import Cell
-from enum import Enum
-import random
+# Module: Ai_mode
+# Description: Implements ai solver with easy, medium, and hard difficulty settings
+# Inputs: Cell
+# Outputs: AI_mode()
+# External sources:
+#   Medium solver algorithm: https://minesweepergame.com/math/a-simple-minesweeper-algorithm-2023.pdf by Mike Sheppard
+# Authors: Hale Coffman, Aryan Kevat
+# Creation Date: 2025-09-29
 
-from functools import partial
-from itertools import product
+import random
+from decimal import Decimal
+from enum import Enum
+
+from classes import Cell
+
+BUFFER_VALUE = 2**6
+
 
 class Mode(Enum):
     NONE = 0
@@ -12,7 +23,19 @@ class Mode(Enum):
     HARD = 3
 
 
-class AI_mode():
+class Constraint:
+    def __init__(self, indices, mines):
+        self.indices = indices
+        self.mines = mines
+
+    def __str__(self):
+        return f"Constraint({'+'.join(str(i) for i in self.indices)}={self.mines})"
+
+    def __repr__(self):
+        return self.__str__()
+
+
+class AI_mode:
     def __init__(self, game_manager):
         self.mode = Mode(0)
         self.is_turn = False
@@ -30,7 +53,7 @@ class AI_mode():
 
     def change_turn(self):
         if self.is_automatic_solver:
-           return
+            return
         else:
             if self.game_manager.game_status.name == "PLAYING":
                 self.is_turn = not self.is_turn
@@ -57,187 +80,128 @@ class AI_mode():
             self.game_manager.handle_clicked_cell(r_rand, c_rand)
             return (r_rand, c_rand)
 
-        return (0,0)
+        return (0, 0)
 
-    def medium_ai_turn(self):
-      class CellPred(Enum):
-        PRED_SAFE = 0
-        PRED_MINE = 1
-        COVERED = 2
-        KNOWN_MINE = 3
+    def get_indices_from_cells(self, cells: list[Cell]) -> list[int]:
+        """converts a list of cells to a list of their indices"""
+        return [cell.row * 10 + cell.col for cell in cells]
 
-      # Flattened list of cells
-      def get_cells() -> list[Cell]:
-        return [cell for row in self.game_manager.grid for cell in row]
+    def get_covered(self) -> list[Cell]:
+        """get all covered cells on the grid"""
+        cells = []
+        for row in self.game_manager.grid:
+            for cell in row:
+                if cell.is_hidden():
+                    cells.append(cell)
+        return cells
 
-      def is_covered(cell: Cell):
-        return cell.is_hidden()
+    def get_remaining_adjacent(self, cell: Cell) -> list[int]:
+        """get all covered cells adjacent to cell"""
+        cells = []
 
-      def is_uncovered(cell: Cell):
-        return not cell.is_hidden()
+        rows, cols = self.game_manager.rows, self.game_manager.cols
+        row, col = cell.row, cell.col
+        minRow, minCol = max(0, row - 1), max(0, col - 1)
+        maxRow, maxCol = min(rows, row + 2), min(cols, col + 2)
 
-      # Get most centered cell (worst random candidate allegedly)
-      def random_key(cell: Cell) -> int:
-        middle_row = (self.game_manager.rows - 1) / 2
-        middle_col = (self.game_manager.cols - 1) / 2
+        for row in range(minRow, maxRow):
+            for col in range(minCol, maxCol):
+                if cell.row == row and cell.col == col:
+                    continue
+                if self.game_manager.grid[row][col].is_hidden():
+                    cells.append(row * 10 + col)
+        return cells
 
-        dist_mid_row = abs(middle_row - cell.row)
-        dist_mid_col = abs(middle_col - cell.col)
+    def generate_constraints(self, covered):
+        """generate a list of constraints for the board"""
+        constraints: list[Constraint] = []
 
-        return dist_mid_row + dist_mid_col
+        # get all uncovered cells with adjacent mines
+        hints: list[int] = []
+        for row in self.game_manager.grid:
+            for cell in row:
+                if not cell.is_hidden() and cell.adjacent > 0:
+                    hints.append(cell)
 
-      # Get all neighbors of a cell with an optional filter
-      def get_neighbors(cell: Cell, filter=lambda x: True) -> list[Cell]:
-        neighbors = []
-        for row in range(cell.row - 1, cell.row + 2):
-          for col in range(cell.col - 1, cell.col + 2):
-            if 0 <= row < self.game_manager.rows and 0 <= col < self.game_manager.cols:
-              target = self.game_manager.grid[row][col]
-              if filter(target):
-                neighbors.append(self.game_manager.grid[row][col])
-        return neighbors
+        # add global constraint for number of mines on the board
+        remaining = self.get_indices_from_cells(covered)
+        constraints.append(Constraint(remaining, self.game_manager.total_mines))
 
-      # Get whether the cell has extra bordering cells than adjacent mines
-      def has_extra_cells(cell: Cell):
-        covered_neighbors = get_neighbors(cell, is_covered)
-        return len(covered_neighbors) > 0 and (len(covered_neighbors) - cell.adjacent) > 0
+        # add local constraint for each hint
+        for cell in hints:
+            remaining = self.get_remaining_adjacent(cell)
+            constraints.append(Constraint(remaining, cell.adjacent))
 
-      def get_num_extra_cells(cell: Cell):
-        covered_neighbors = get_neighbors(cell, is_covered)
-        return len(covered_neighbors) - cell.adjacent
+        return constraints
 
-      def get_edge_cells(edge_covered: list[Cell]) -> list[Cell]:
-        edge = []
-        for cell in edge_covered:
-          for neighbor in get_neighbors(cell, is_covered):
-            if neighbor not in edge:
-              edge.append(neighbor)
-        return edge
+    def medium_ai_turn(self) -> tuple[int, int]:
+        """
+        pick the best cell to uncover
+        https://minesweepergame.com/math/a-simple-minesweeper-algorithm-2023.pdf
+        """
 
-      def make_cluster(cell: Cell, edge_cells: list):
-        cluster: list[Cell] = []
-        for nb in get_neighbors(cell, is_covered):
-          if nb in edge_cells:
-            cluster.append(nb)
-            edge_cells.remove(nb)
-            cluster.extend(make_cluster(nb, edge_cells))
-        return cluster
+        covered = self.get_covered()
 
-      def make_clusters(edge_cells: list[Cell]) -> list[list[Cell]]:
-        clusters: list[list[Cell]] = []
-        while len(edge_cells):
-          cluster = make_cluster(edge_cells[0], edge_cells)
-          clusters.append(cluster)
+        # if board is fully covered,
+        # the best choice is to pick a corner
+        if len(covered) == self.game_manager.rows * self.game_manager.cols:
+            self.game_manager.handle_clicked_cell(0, 0)
+            return 0, 0
 
-        clusters.sort(key=lambda x: len(x))
-        return clusters
+        # initialize probability table for mines and safe cells
+        p_mines: dict[int, Decimal] = dict()
+        p_safe: dict[int, Decimal] = dict()
+        for cell in covered:
+            index = cell.row * 10 + cell.col
+            p_mines[index] = Decimal(1.0)
+            p_safe[index] = Decimal(1.0)
 
-      def find_valid_states(grid: list[list[CellPred]], cluster: list[Cell], depth):
-        states: list[tuple[int]] = []
+        # initialize list of constraints
+        constraints = self.generate_constraints(covered)
 
-        shallow_cluster = cluster[:depth]
+        # end when candidates have been the same for `buffer` iterations
+        buffer = BUFFER_VALUE
+        candidates: list[int] = []
+        while buffer:
+            for constraint in constraints:
+                # scale prob_mines values to total to number of mines
+                p_mines_sum: Decimal = sum(p_mines[i] for i in constraint.indices)
+                if p_mines_sum != constraint.mines:
+                    for i in constraint.indices:
+                        p_mines[i] *= constraint.mines / p_mines_sum
 
-        # Create every state
-        for state in product([CellPred.PRED_SAFE, CellPred.PRED_MINE], repeat=depth):
-          # Set each cell in the cluster to its state
-          for pred, cell in enumerate(shallow_cluster):
-            grid[cell.row][cell.col] = state[pred]
+                # scale prob_safe values to total to number of safe cells
+                p_safe_sum: Decimal = sum(p_safe[i] for i in constraint.indices)
+                num_safe = len(constraint.indices) - constraint.mines
+                if p_safe_sum != num_safe:
+                    for i in constraint.indices:
+                        p_safe[i] *= num_safe / p_safe_sum
 
-          if validate_state(shallow_cluster, grid, state):
-            states.append(state)
+            # normalize probalities for mine and safe to equal 1
+            for i in p_mines.keys():
+                total = p_mines[i] + p_safe[i]
+                p_mines[i] /= total
+                p_safe[i] /= total
 
-        # Reset grid
-        for cell in shallow_cluster:
-          grid[cell.row][cell.col] = CellPred.COVERED
+            # get lowest probability of a mine
+            min_value = min(p_mines.values())
 
-        return states
+            # get all indices with the same probability
+            new_candidates = [i for i in p_mines.keys() if p_mines[i] == min_value]
 
+            # decrement buffer if the candidates are the same
+            if new_candidates == candidates:
+                buffer -= 1
+            else:
+                # update candidates and reset buffer
+                candidates = new_candidates
+                buffer = BUFFER_VALUE
 
-      def validate_state(cluster: list[Cell], grid: list[list[int]], c: tuple[int]):
-        # Evaluate all cells in the cluster
-        for cell in cluster:
-          # Get all adjacent cells
-          for adj in get_neighbors(cell):
-            if adj.hidden:
-              continue
-
-            if adj in cluster:
-              continue
-
-            covered = 0
-            count = 0
-
-            for nb in get_neighbors(adj, is_covered):
-              state = grid[nb.row][nb.col]
-              if state == CellPred.COVERED:
-                covered += 1
-              elif state != CellPred.PRED_SAFE:
-                count += 1
-
-            # Don't overload a cell
-            if count > adj.adjacent:
-              return False
-
-            # Don't underload a cell
-            if covered < (adj.adjacent - count):
-              return False
-
-        return True
-
-
-      # Find cells that are always safe or always mines
-      def find_shared(grid: list[list[CellPred]], cluster: list[Cell], depth: int, valid_states: list[tuple[int]]):
-        candidate: Cell = None
-        for i in range(depth):
-          safe = True
-          mine = True
-
-          for state in valid_states:
-            safe = safe and state[i] == CellPred.PRED_SAFE
-            mine = mine and state[i] == CellPred.PRED_MINE
-
-          if mine:
-            c = cluster[i]
-            grid[c.row][c.col] = CellPred.KNOWN_MINE
-
-          if safe and candidate is None:
-            candidate = cluster[i]
-
-        return candidate
-
-      candidate: Cell | None = None
-
-      cells = get_cells()
-
-      covered = list(filter(is_covered, cells))
-      uncovered = list(filter(is_uncovered, cells))
-
-      uncovered_extra = list(filter(lambda x: has_extra_cells(x), uncovered))
-      uncovered_extra = sorted(uncovered_extra, key=lambda x: get_num_extra_cells(x))
-      edge_cells = get_edge_cells(uncovered_extra)
-      clusters = make_clusters(edge_cells)
-
-      # Create grid for simulations
-      grid = [[CellPred.COVERED for _ in range(10)] for _ in range(10)]
-
-      for cluster in clusters:
-        for depth in range(1, len(cluster) + 1):
-          valid_states = find_valid_states(grid, cluster, depth)
-          if len(valid_states) == 0:
-            continue
-          candidate = find_shared(grid, cluster, depth, valid_states)
-          if candidate:
-            break
-        if candidate:
-          break
-
-      # If still uncertain (ie first pick), pick random cell from outwards in, prioritizing the center
-      if candidate is None:
-        best_random_candidate = sorted(covered, key=partial(random_key), reverse=True)
-        candidate = best_random_candidate[0]
-
-      self.game_manager.handle_clicked_cell(candidate.row, candidate.col)
-      return candidate.row, candidate.col
+        # pick random candidate
+        index = candidates[0]
+        row, col = (index // 10, index % 10)
+        self.game_manager.handle_clicked_cell(row, col)
+        return row, col
 
     def hard_ai_turn(self):
         valid_moves = []
@@ -253,4 +217,4 @@ class AI_mode():
             self.game_manager.handle_clicked_cell(r_rand, c_rand)
             return (r_rand, c_rand)
 
-        return (0,0)
+        return (0, 0)
