@@ -508,15 +508,15 @@ class Frontend:
         return None
 
     def handle_left_click(self, r, c):
-    """Handle a left-click on the game board"""
-    move_ok = self.game_manager.handle_clicked_cell(r, c)
+      """Handle a left-click on the game board"""
+      move_ok = self.game_manager.handle_clicked_cell(r, c)
 
-    if move_ok:
-        self.sound.play('reveal')
-        # Only hand turn to AI if a move happened and game continues
-        game_over = self.game_manager.game_status in (GameStatus.WIN, GameStatus.LOSE)
-        if not game_over and self.ai_mode and self.ai_mode.mode.name != "NONE":
-            self.ai_mode.change_turn()
+      if move_ok:
+          self.sound.play('reveal')
+          # Only hand turn to AI if a move happened and game continues
+          game_over = self.game_manager.game_status in (GameStatus.WIN, GameStatus.LOSE)
+          if not game_over and self.ai_mode and self.ai_mode.mode.name != "NONE":
+              self.ai_mode.change_turn()
 
     def handle_right_click(self, r, c):
         """Handle a right-click action on the game board"""
