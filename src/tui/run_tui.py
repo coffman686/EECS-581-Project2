@@ -17,8 +17,8 @@ Authors:
 Renamed to run_tui.py (previously run-tui.py): 9/14/2025
 Creation date of run-tui.py: 9/3/2025
 NOTE: All code in the file was authored by 1 or more of the authors. No outside sources were used for code
-
 """
+
 """
 MAINTENANCE PROLOGUE
 Additions: 
@@ -30,6 +30,17 @@ Additional Outputs:
     - High score message
 Authors:
     - Sam Suggs
+File edited on: 9/29/2025
+"""
+
+"""
+MAINTENANCE PROLOGUE
+Additions: 
+    - Add AI mode implementation for turn based and auto-solver modes
+Additional Inputs: AI_mode class
+Additional Outputs:
+Authors:
+    - Hale Coffman
 File edited on: 9/29/2025
 """
 
@@ -48,16 +59,12 @@ Author: Landon Bever
 Date: 10/2/2025
 '''
 
-###
-### MOVED FILE INTO SRC FILE TO WORK LOCALLY
-###
 # Imports:
 import curses
 from curses.textpad import Textbox, rectangle
 import platform
 from AI_mode import AI_mode, Mode # import AI mode module
 from classes import GameManager, Cell, CellState, GameStatus, SoundManager
-from classes import GameManager, Cell, CellState, GameStatus
 import time
 import math
 
@@ -286,6 +293,7 @@ class Frontend:
 
         return True
     
+    # Initializes automatic solver to start playing until game is over
     def automatic_initializer(self):
         self.ai_mode.is_automatic_solver = True
         self.ai_mode.is_turn = True
@@ -308,11 +316,11 @@ class Frontend:
 
             ## ADD OTHER NUMBERS TO START OTHER AI MODES
             if ch in (ord('\n'), ord('\r'), ord('1'), ord('2'), ord('3'), ord('4'), ord('5'), ord('6')): # added 1 to start easy AI mode 
-                if ch == ord('1'):
+                if ch == ord('1'): # turn based easy mode
                     self.ai_mode.set_mode_easy()
-                elif ch == ord('2'):
+                elif ch == ord('2'): # turn based medium mode
                     self.ai_mode.set_mode_medium()
-                elif ch == ord('3'):
+                elif ch == ord('3'): # turn based hard mode
                     self.ai_mode.set_mode_hard()
                 elif ch == ord('4'): # automatic easy ai solver
                     self.ai_mode.set_mode_easy()
@@ -345,13 +353,15 @@ class Frontend:
         while not self.game_manager.should_quit:
 
             ## AI TURN FOR AI EASY MODE ##
+            # if in an AI mode, currently AIs turn, and Game is currently in the playing state>>
             if self.ai_mode.mode.name != "NONE" and self.ai_mode.is_turn and self.game_manager.game_status == GameStatus.PLAYING:
-                r, c = self.cur_r, self.cur_c
-                self.cur_r, self.cur_c = self.ai_mode.ai_turn() ## temp set current row and col to AIs move location
-                self.temp_highlight(ch)
+                r, c = self.cur_r, self.cur_c # save users row and col positions
+                self.cur_r, self.cur_c = self.ai_mode.ai_turn() # temp set current row and col to AIs move location
+                self.temp_highlight(ch) # temp highlight AIs move
                 self.cur_r, self.cur_c = r, c # reset current r and c to players location
-                self.ai_mode.change_turn()
+                self.ai_mode.change_turn() # change turn to players turn
             else:
+                # if players turn
                 ch = self.get_input()
                 self.process_input(ch)
 
@@ -361,7 +371,7 @@ class Frontend:
             
     # TEMP HIGHLIGHT FOR AI TURN 
     def temp_highlight(self, ch):
-        self.draw_board()
+        #self.draw_board()
 
         sh, sw = self.stdscr.getmaxyx()
 
@@ -708,26 +718,7 @@ class Frontend:
 
     def display_win_screen(self):
         """Sends the win message to display_game_update"""
-        if self.ai_mode.is_turn: ## IF AIs TURN WHEN WON
-            msg_obj = {
-                "main_message": "AI Won, You Lost",
-                "sub_message": "Better Luck Next Time!",
-                "control_options": "p=Play Again  q=Quit: ",
-            }
-        else:
-            msg_obj = {
-                "main_message": "Congratulations -- You Win!",
-                "sub_message": "Great job, Champion! You're a force to be reckoned with!",
-                "control_options": "p=Play Again  q=Quit: ",
-            }
 
-        self.sound.play('win')
-
-        msg_obj = { 
-            'main_message': "Congratulations -- You Win!", 
-            'sub_message': "Great job, Champion! You're a force to be reckoned with!",
-            'control_options': "p=Play Again  q=Quit: ",
-        }
         # Get elapsed time (how long it took to win the game)
         elapsed_time = math.floor(self.game_manager.finished_time-self.game_manager.start_time)
         # If it's high score for the specified mine count
@@ -740,12 +731,21 @@ class Frontend:
             # Otherwise, display the high score for the specific mine count and overall high score
             message = f"High score for {self.game_manager.total_mines} mines: {self.high_score[self.game_manager.total_mines-10]}. High score for any mine count: {min(self.high_score)}"
 
+        if self.ai_mode.is_turn: ## IF AIs TURN WHEN WON
+            msg_obj = {
+                "main_message": "AI Won, You Lost",
+                "sub_message": message,
+                "control_options": "p=Play Again  q=Quit: ",
+            }
+        else:
+            msg_obj = {
+                "main_message": "Congratulations -- You Win!",
+                "sub_message": message,
+                "control_options": "p=Play Again  q=Quit: ",
+            }
 
-        msg_obj = {
-            "main_message": "Congratulations -- You Win!",
-            "sub_message": message,
-            "control_options": "p=Play Again  q=Quit: ",
-        }
+        self.sound.play('win')
+
         return self.display_game_update(msg_obj)
 
     def display_loss_screen(self):
@@ -763,17 +763,6 @@ class Frontend:
                 "control_options": "p=Play Again  q=Quit: ",
             }
         
-
         self.sound.play('lose')
 
-        msg_obj = { 
-            'main_message': "Sorry :( -- You Lost! ", 
-            'sub_message': "This one wasn't your game...",
-            'control_options': "p=Play Again  q=Quit: ",
-        }
-        msg_obj = {
-            "main_message": "Sorry :( -- You Lost! ",
-            "sub_message": "This one wasn't your game...",
-            "control_options": "p=Play Again  q=Quit: ",
-        }
         return self.display_game_update(msg_obj)

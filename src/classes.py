@@ -41,14 +41,24 @@ Authors:
     - Sam Suggs
 File edited on: 9/29/2025
 """
-# Import enum, random and time
-from enum import Enum
-import enum
-import random
-import time
 
-import simpleaudio as sa
-import os
+"""
+MAINTENANCE PROLOGUE:
+Additions:
+    - Add returns to handle_user_input to determine if turn is actually carried out
+Additional Inputs: None
+Additional Outputs: None
+Authors:
+    - Hale Coffman
+File edited on: 9/29/2025
+"""
+
+# Imports
+from enum import Enum
+import random
+import time # for timer
+import simpleaudio as sa # for sound effects
+import os # for sound effects
 
 # Create a CellState class which is used to represent the current state of the cell
 # Determines some of the behavior that Cells can have occur
