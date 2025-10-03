@@ -15,7 +15,7 @@ Creation Date: 9/14/2025
 NOTE: All code in the file was authored by 1 or more of the authors. No outside sources were used for code
 """
 
-'''
+"""
 Prologue comments for P2
 
 File name: classes.py
@@ -28,7 +28,7 @@ Outputs: None
 External Sources: simpleaudio - code written by Landon Bever
 Author: Landon Bever
 Date: 10/2/2025
-'''
+"""
 
 # Import enum and random
 """
@@ -155,15 +155,15 @@ class Cell:
 
 # Class for a GameManager object which keeps track of what is and has happened in the game
 class GameManager:
-    def __init__(self, seed=None):
+    def __init__(self, seed=None, rows=10, cols=10):
         """Constructor function for the GamerManager Class"""
         self.is_first_click = True
 
         self.should_quit = False
 
         # Save number of rows & cols on the board
-        self.rows = 10
-        self.cols = 10
+        self.rows = rows
+        self.cols = cols
 
         # Save number of mines & mines left
         # Defaults to 10. We need to call set_total_mines to actually update it.
@@ -338,8 +338,8 @@ class GameManager:
         # If the cell has a flag on it, ignore.
         if is_flagged == True:
             return False
-        
-        # If this is the first left click that takes an action, change the game state to playing and take the actions for the first click (set mines, etc.)
+
+            # If this is the first left click that takes an action, change the game state to playing and take the actions for the first click (set mines, etc.)
             return
 
         # If this is the first left click that takes an action, change the game state to playing and take the actions for the first click (set mines, start timer, etc.)
@@ -379,7 +379,7 @@ class GameManager:
             return True
 
         return True
-    
+
     # Checks if the player has won the game
     # If every cell without a mine has been revealed they have won, otherwise they have not.
     def check_win(self):
@@ -436,18 +436,22 @@ class GameManager:
             for col in range(self.cols):
                 self.reveal_cell(row, col)
         return
-    
+
+
 class SoundManager:
     """A sound manager that plays sounds for game events"""
+
     def __init__(self):
         base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-        self.dir = os.path.join(base_dir, "assets", "sounds") #navigate to sounds directory
+        self.dir = os.path.join(
+            base_dir, "assets", "sounds"
+        )  # navigate to sounds directory
 
         files = {
-            "reveal": "reveal.wav", # reveal cell
-            "flag":   "flag.wav", # place/remove flag
-            "win":    "win.wav", # win game
-            "lose":   "lose.wav", # lose game
+            "reveal": "reveal.wav",  # reveal cell
+            "flag": "flag.wav",  # place/remove flag
+            "win": "win.wav",  # win game
+            "lose": "lose.wav",  # lose game
         }
 
         # preload wave objects
