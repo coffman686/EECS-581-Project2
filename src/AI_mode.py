@@ -167,22 +167,23 @@ class AI_mode:
             for constraint in constraints:
                 # scale prob_mines values to total to number of mines
                 p_mines_sum: float = sum(p_mines[i] for i in constraint.indices)
-                if p_mines_sum != constraint.mines:
+                if p_mines_sum != constraint.mines and p_mines_sum != 0:
                     for i in constraint.indices:
                         p_mines[i] *= constraint.mines / p_mines_sum
 
                 # scale prob_safe values to total to number of safe cells
                 p_safe_sum: float = sum(p_safe[i] for i in constraint.indices)
                 num_safe = len(constraint.indices) - constraint.mines
-                if p_safe_sum != num_safe:
+                if p_safe_sum != num_safe and p_safe_sum != 0:
                     for i in constraint.indices:
                         p_safe[i] *= num_safe / p_safe_sum
 
             # normalize probalities for mine and safe to equal 1
             for i in p_mines.keys():
                 total = p_mines[i] + p_safe[i]
-                p_mines[i] /= total
-                p_safe[i] /= total
+                if total != 0:
+                  p_mines[i] /= total
+                  p_safe[i] /= total
 
             # get lowest probability of a mine
             min_value = min(p_mines.values())
