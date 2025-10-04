@@ -6,6 +6,25 @@ Alternatively, you can also run the following command from the project's root di
 `python -m src.main` 
 
 As the provided executables are not guaranteed to work across all devices, this command is the best way to ensure that the program will function correctly. 
+### Project 2 (Maintenance) — What Changed
+
+* **Gameplay polish:**
+
+  * **Timer** display added.
+  * **High-score** tracker (per mine count).
+  * **AI-Modes** with automatic and interactive capabilities.
+
+#### How to Play (unchanged)
+
+Operation, controls, and gameplay flow are **the same as in Part 1**. Use mouse (if supported by your terminal) or keyboard as previously documented.
+
+#### About the Prebuilt Executables
+
+We **did not update the `dist-*` executables** due to build issues with `simpleaudio` on some Windows setups. A later patch could refresh these dists, but it’s **not required**—the recommended way to run is:
+
+```bash
+python -m src.main
+```
 
 ### Dependencies:
 - Python 3
@@ -13,6 +32,7 @@ As the provided executables are not guaranteed to work across all devices, this 
 - Standard libraries: enum, platform, random
 - pyinstaller (if you are intending to build the project)
 - pytest (if you're interesting in running tests)
+- simpleaudio (from proj maintenance)
 
 ### Terminal requirements
 - For mouse input, your terminal must support curses mouse functionality. Otherwise, you'll only be able to use the keyboard interface.
